@@ -13,10 +13,13 @@ pip-delete-this-directory.txt
 
 # Environment variables
 .env
+.env.*
 .env.local
 .env.development.local
 .env.test.local
 .env.production.local
+*.env
+*.env.*
 
 # IDE
 .vscode/
@@ -68,3 +71,14 @@ coverage/
 
 # Testing
 .nyc_output
+
+# Security & Sensitive Data
+*.key
+*.pem
+*.p12
+*.pfx
+secrets/
+credentials/
+config/secrets/
+*.secret
+*.private

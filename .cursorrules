@@ -1,0 +1,32 @@
+# Job Portal Project Intelligence
+
+## Project Overview
+This is a job portal web application project. The memory bank system is now initialized and ready to capture project evolution.
+
+## Memory Bank Structure
+- **projectbrief.md**: Core project requirements and goals
+- **productContext.md**: User experience and product vision
+- **systemPatterns.md**: Architecture and technical patterns
+- **techContext.md**: Technology stack and development environment
+- **activeContext.md**: Current work focus and recent changes
+- **progress.md**: What works, what's left, and current status
+
+## Key Principles
+1. Always read memory bank files at the start of each session
+2. Update documentation when significant changes occur
+3. Maintain clear context across development sessions
+4. Document patterns and decisions as they emerge
+
+## Current State
+- Project is in initialization phase
+- Memory bank structure is established
+- Ready for requirements gathering and development
+
+## Development Notes
+- Workspace: /Users/pulkitgarg/second/job_port
+- OS: macOS (darwin 24.5.0)
+- Shell: /bin/zsh
+
+## Next Steps
+Awaiting user requirements to define project scope and begin development.
+

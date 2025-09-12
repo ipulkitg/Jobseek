@@ -82,3 +82,6 @@ credentials/
 config/secrets/
 *.secret
 *.private
+
+# Memory Bank
+memory-bank/

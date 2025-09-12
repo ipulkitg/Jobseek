@@ -92,8 +92,8 @@ const JobPostingForm: React.FC<JobPostingFormProps> = ({
         api.get('/jobs/states')
       ]);
       
-      setCategories(categoriesRes.data);
-      setStates(statesRes.data);
+      setCategories(categoriesRes);
+      setStates(statesRes);
     } catch (err) {
       setError('Failed to load form data');
       console.error('Error loading form data:', err);
@@ -588,4 +588,5 @@ const JobPostingForm: React.FC<JobPostingFormProps> = ({
 };
 
 export default JobPostingForm;
+
 

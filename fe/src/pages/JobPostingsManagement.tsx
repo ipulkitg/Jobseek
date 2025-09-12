@@ -54,11 +54,25 @@ const JobPostingsManagement: React.FC = () => {
 
   const loadJobPostings = async () => {
     try {
+      console.log('🔍 JobPostingsManagement: Loading job postings...');
       const response = await api.get('/jobs/employer');
-      setJobPostings(response);
-    } catch (err) {
-      setError('Failed to load job postings');
-      console.error('Error loading job postings:', err);
+      console.log('✅ JobPostingsManagement: Job postings loaded:', response);
+      setJobPostings(response || []); // Ensure we always have an array
+      setError(null); // Clear any previous errors
+    } catch (err: any) {
+      console.error('❌ JobPostingsManagement: Error loading job postings:', err);
+      
+      // Only show error for actual server errors, not missing profiles
+      if (err.message?.includes('401')) {
+        setError('Please sign in to view your job postings');
+      } else if (err.message?.includes('500')) {
+        setError('Server error. Please try again later.');
+      } else {
+        // For other errors (403, 404, etc.), just show empty state
+        console.log('🔍 JobPostingsManagement: Treating as empty state rather than error');
+        setJobPostings([]);
+        setError(null);
+      }
     } finally {
       setLoading(false);
     }
@@ -149,96 +163,287 @@ const JobPostingsManagement: React.FC = () => {
 
   if (error) {
     return (
-      <div style={{
-        display: 'flex',
-        justifyContent: 'center',
-        alignItems: 'center',
-        height: '400px',
-        color: 'red'
-      }}>
-        {error}
+      <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
+        <div style={{
+          backgroundColor: 'white',
+          padding: '60px 40px',
+          borderRadius: '12px',
+          boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
+          textAlign: 'center'
+        }}>
+          <div style={{
+            fontSize: '48px',
+            marginBottom: '20px'
+          }}>
+            ⚠️
+          </div>
+          <h3 style={{
+            fontSize: '20px',
+            fontWeight: '600',
+            color: '#dc2626',
+            marginBottom: '12px'
+          }}>
+            Unable to Load Job Postings
+          </h3>
+          <p style={{
+            color: '#6b7280',
+            marginBottom: '32px',
+            lineHeight: '1.6'
+          }}>
+            {error}
+          </p>
+          <div style={{ display: 'flex', gap: '16px', justifyContent: 'center' }}>
+            <button
+              onClick={() => {
+                setError('');
+                setLoading(true);
+                loadJobPostings();
+              }}
+              style={{
+                padding: '12px 24px',
+                backgroundColor: '#3b82f6',
+                color: 'white',
+                border: 'none',
+                borderRadius: '8px',
+                fontSize: '16px',
+                fontWeight: '500',
+                cursor: 'pointer'
+              }}
+            >
+              Try Again
+            </button>
+            <button
+              onClick={() => {
+                setError('');
+                handleCreateJob();
+              }}
+              style={{
+                padding: '12px 24px',
+                backgroundColor: '#10b981',
+                color: 'white',
+                border: 'none',
+                borderRadius: '8px',
+                fontSize: '16px',
+                fontWeight: '500',
+                cursor: 'pointer'
+              }}
+            >
+              Create First Job
+            </button>
+          </div>
+        </div>
       </div>
     );
   }
 
   return (
     <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
-      {/* Header */}
+      {/* Dashboard Header */}
       <div style={{
         backgroundColor: 'white',
-        padding: '24px',
-        borderRadius: '12px',
-        boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
-        marginBottom: '24px'
+        padding: '32px',
+        borderRadius: '16px',
+        boxShadow: '0 4px 6px rgba(0,0,0,0.1)',
+        marginBottom: '32px'
       }}>
         <div style={{
           display: 'flex',
           justifyContent: 'space-between',
-          alignItems: 'center',
-          marginBottom: '20px'
+          alignItems: 'flex-start',
+          marginBottom: '32px'
         }}>
           <div>
-            <h2 style={{
-              fontSize: '24px',
-              fontWeight: '600',
+            <h1 style={{
+              fontSize: '32px',
+              fontWeight: '700',
               color: '#1f2937',
               margin: '0 0 8px 0'
             }}>
-              Job Postings Management
-            </h2>
+              Job Postings Dashboard
+            </h1>
             <p style={{
               color: '#6b7280',
+              fontSize: '16px',
               margin: '0'
             }}>
-              Create, edit, and manage your job postings
+              Manage your job listings and track applications
             </p>
           </div>
           <button
             onClick={handleCreateJob}
             style={{
-              padding: '12px 24px',
+              padding: '16px 32px',
               backgroundColor: '#3b82f6',
               color: 'white',
               border: 'none',
-              borderRadius: '8px',
+              borderRadius: '12px',
               fontSize: '16px',
-              fontWeight: '500',
-              cursor: 'pointer'
+              fontWeight: '600',
+              cursor: 'pointer',
+              boxShadow: '0 2px 4px rgba(59, 130, 246, 0.3)',
+              transition: 'all 0.2s ease'
+            }}
+            onMouseOver={(e) => {
+              e.currentTarget.style.backgroundColor = '#2563eb';
+              e.currentTarget.style.transform = 'translateY(-1px)';
+            }}
+            onMouseOut={(e) => {
+              e.currentTarget.style.backgroundColor = '#3b82f6';
+              e.currentTarget.style.transform = 'translateY(0)';
             }}
           >
-            + Create New Job
+            + Create New Job Posting
           </button>
         </div>
 
+        {/* Dashboard Stats */}
         <div style={{
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center'
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+          gap: '24px'
         }}>
-          <span style={{ color: '#6b7280', fontSize: '14px' }}>
-            {jobPostings.length} job posting{jobPostings.length !== 1 ? 's' : ''}
-          </span>
-          <div style={{ display: 'flex', gap: '8px' }}>
-            <span style={{
-              padding: '4px 8px',
-              backgroundColor: '#10b981',
-              color: 'white',
-              borderRadius: '4px',
-              fontSize: '12px',
-              fontWeight: '500'
+          <div style={{
+            padding: '20px',
+            backgroundColor: '#f8fafc',
+            borderRadius: '12px',
+            border: '1px solid #e2e8f0'
+          }}>
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              marginBottom: '8px'
             }}>
-              {jobPostings.filter(job => job.isActive).length} Active
-            </span>
-            <span style={{
-              padding: '4px 8px',
-              backgroundColor: '#6b7280',
-              color: 'white',
-              borderRadius: '4px',
-              fontSize: '12px',
-              fontWeight: '500'
+              <div style={{
+                fontSize: '24px',
+                marginRight: '12px'
+              }}>📝</div>
+              <h3 style={{
+                fontSize: '14px',
+                fontWeight: '500',
+                color: '#64748b',
+                margin: '0',
+                textTransform: 'uppercase',
+                letterSpacing: '0.05em'
+              }}>
+                Total Jobs
+              </h3>
+            </div>
+            <p style={{
+              fontSize: '28px',
+              fontWeight: '700',
+              color: '#1e293b',
+              margin: '0'
             }}>
-              {jobPostings.filter(job => !job.isActive).length} Inactive
-            </span>
+              {jobPostings.length}
+            </p>
+          </div>
+
+          <div style={{
+            padding: '20px',
+            backgroundColor: '#f0fdf4',
+            borderRadius: '12px',
+            border: '1px solid #bbf7d0'
+          }}>
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              marginBottom: '8px'
+            }}>
+              <div style={{
+                fontSize: '24px',
+                marginRight: '12px'
+              }}>✅</div>
+              <h3 style={{
+                fontSize: '14px',
+                fontWeight: '500',
+                color: '#16a34a',
+                margin: '0',
+                textTransform: 'uppercase',
+                letterSpacing: '0.05em'
+              }}>
+                Active Jobs
+              </h3>
+            </div>
+            <p style={{
+              fontSize: '28px',
+              fontWeight: '700',
+              color: '#15803d',
+              margin: '0'
+            }}>
+              {jobPostings.filter(job => job.isActive).length}
+            </p>
+          </div>
+
+          <div style={{
+            padding: '20px',
+            backgroundColor: '#fefce8',
+            borderRadius: '12px',
+            border: '1px solid #fde047'
+          }}>
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              marginBottom: '8px'
+            }}>
+              <div style={{
+                fontSize: '24px',
+                marginRight: '12px'
+              }}>📊</div>
+              <h3 style={{
+                fontSize: '14px',
+                fontWeight: '500',
+                color: '#ca8a04',
+                margin: '0',
+                textTransform: 'uppercase',
+                letterSpacing: '0.05em'
+              }}>
+                Total Applications
+              </h3>
+            </div>
+            <p style={{
+              fontSize: '28px',
+              fontWeight: '700',
+              color: '#a16207',
+              margin: '0'
+            }}>
+              {jobPostings.reduce((total, job) => total + (job._count?.jobApplications || 0), 0)}
+            </p>
+          </div>
+
+          <div style={{
+            padding: '20px',
+            backgroundColor: '#fdf4ff',
+            borderRadius: '12px',
+            border: '1px solid #e4d4f4'
+          }}>
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              marginBottom: '8px'
+            }}>
+              <div style={{
+                fontSize: '24px',
+                marginRight: '12px'
+              }}>⏸️</div>
+              <h3 style={{
+                fontSize: '14px',
+                fontWeight: '500',
+                color: '#9333ea',
+                margin: '0',
+                textTransform: 'uppercase',
+                letterSpacing: '0.05em'
+              }}>
+                Inactive Jobs
+              </h3>
+            </div>
+            <p style={{
+              fontSize: '28px',
+              fontWeight: '700',
+              color: '#7c3aed',
+              margin: '0'
+            }}>
+              {jobPostings.filter(job => !job.isActive).length}
+            </p>
           </div>
         </div>
       </div>
@@ -351,16 +556,16 @@ const JobPostingsManagement: React.FC = () => {
                       fontSize: '12px',
                       fontWeight: '500'
                     }}>
-                      {job.category.name}
+                      {job.category?.name || 'Unknown Category'}
                     </span>
                     <span style={{ color: '#6b7280', fontSize: '14px' }}>
-                      📍 {job.locationCity}, {job.locationStateRef.name}
+                      📍 {job.locationCity}, {job.locationStateRef?.name || 'Unknown State'}
                     </span>
                     <span style={{ color: '#6b7280', fontSize: '14px' }}>
                       💰 {formatSalary(job.salaryMin, job.salaryMax)}
                     </span>
                     <span style={{ color: '#6b7280', fontSize: '14px' }}>
-                      📝 {job._count.jobApplications} application{job._count.jobApplications !== 1 ? 's' : ''}
+                      📝 {job._count?.jobApplications || 0} application{(job._count?.jobApplications || 0) !== 1 ? 's' : ''}
                     </span>
                   </div>
                 </div>

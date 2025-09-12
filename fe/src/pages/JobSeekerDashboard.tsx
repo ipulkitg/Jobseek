@@ -8,7 +8,8 @@ import ApplicationHistory from './ApplicationHistory';
 
 const JobSeekerDashboard: React.FC = () => {
   const { user, isSignedIn, isLoaded } = useUser();
-  const { isSignedIn: authIsSignedIn, isLoaded: authIsLoaded } = useAuth();
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const { } = useAuth(); // Keep useAuth import but don't use unused vars
   const { profile, loading: profileLoading, hasProfile } = useProfile();
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState<'dashboard' | 'jobs' | 'applications'>('dashboard');

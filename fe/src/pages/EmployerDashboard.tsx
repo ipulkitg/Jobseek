@@ -8,7 +8,8 @@ import ApplicationsManagement from './ApplicationsManagement';
 
 const EmployerDashboard: React.FC = () => {
   const { user, isSignedIn, isLoaded } = useUser();
-  const { isSignedIn: authIsSignedIn, isLoaded: authIsLoaded } = useAuth();
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const { } = useAuth(); // Keep useAuth import but don't use unused vars
   const { profile, loading: profileLoading, hasProfile } = useProfile();
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState<'dashboard' | 'jobs' | 'applications'>('dashboard');
@@ -19,14 +20,10 @@ const EmployerDashboard: React.FC = () => {
     }
   }, [isLoaded, isSignedIn, navigate]);
 
-  // Allow access to dashboard even without profile
-  // useEffect(() => {
-  //   if (isLoaded && isSignedIn && !profileLoading && !profile) {
-  //     navigate('/profile-setup');
-  //   }
-  // }, [isLoaded, isSignedIn, profileLoading, profile, navigate]);
+  // Note: Removed automatic redirect to profile-setup to let users see the dashboard
+  // The dashboard will show appropriate messaging about needing a profile
 
-  if (!isLoaded) {
+  if (!isLoaded || profileLoading) {
     return (
       <div style={{
         display: 'flex',
@@ -35,7 +32,7 @@ const EmployerDashboard: React.FC = () => {
         height: '100vh',
         fontSize: '18px'
       }}>
-        Loading...
+        {profileLoading ? 'Checking company profile...' : 'Loading...'}
       </div>
     );
   }
@@ -53,10 +50,10 @@ const EmployerDashboard: React.FC = () => {
       default:
         return (
           <div className="welcome-section">
-            {!profileLoading && !hasProfile && (
+            {!hasProfile && (
               <div style={{
-                backgroundColor: '#fef3c7',
-                border: '1px solid #f59e0b',
+                backgroundColor: '#fef2f2',
+                border: '1px solid #ef4444',
                 borderRadius: '8px',
                 padding: '16px',
                 marginBottom: '24px',
@@ -65,14 +62,14 @@ const EmployerDashboard: React.FC = () => {
                 alignItems: 'center'
               }}>
                 <div>
-                  <h3 style={{ margin: '0 0 4px 0', color: '#92400e' }}>Complete your company profile</h3>
-                  <p style={{ margin: 0, color: '#92400e' }}>Add company details to start posting jobs and attract candidates</p>
+                  <h3 style={{ margin: '0 0 4px 0', color: '#dc2626' }}>Company profile required</h3>
+                  <p style={{ margin: 0, color: '#dc2626' }}>You must create a company profile to post jobs and manage applications. This is mandatory for employers.</p>
                 </div>
                 <button
-                  onClick={() => navigate('/profile-setup')}
+                  onClick={() => navigate('/profile-setup?role=employer')}
                   style={{
                     padding: '8px 16px',
-                    backgroundColor: '#f59e0b',
+                    backgroundColor: '#ef4444',
                     color: 'white',
                     border: 'none',
                     borderRadius: '6px',
@@ -82,14 +79,16 @@ const EmployerDashboard: React.FC = () => {
                     whiteSpace: 'nowrap'
                   }}
                 >
-                  Make a Profile
+                  Create Profile
                 </button>
               </div>
             )}
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
               <div>
                 <h2 style={{ margin: 0 }}>Welcome back, {profile?.companyName || user?.firstName || 'Employer'}!</h2>
-                <p style={{ margin: 0, color: '#6b7280' }}>Manage your job postings and applications</p>
+                <p style={{ margin: 0, color: '#6b7280' }}>
+                  {hasProfile ? 'Manage your job postings and applications' : 'Complete your company profile to access job management features'}
+                </p>
               </div>
               {hasProfile && (
                 <div style={{ display: 'flex', gap: '8px' }}>
@@ -132,34 +131,40 @@ const EmployerDashboard: React.FC = () => {
             <div className="quick-actions" style={{ marginTop: '32px' }}>
               <button 
                 className="btn btn-primary"
-                onClick={() => setActiveTab('jobs')}
+                onClick={() => hasProfile && setActiveTab('jobs')}
+                disabled={!hasProfile}
                 style={{
                   padding: '12px 24px',
-                  backgroundColor: '#3b82f6',
+                  backgroundColor: hasProfile ? '#3b82f6' : '#9ca3af',
                   color: 'white',
                   border: 'none',
                   borderRadius: '8px',
                   fontSize: '16px',
                   fontWeight: '500',
-                  cursor: 'pointer',
-                  marginRight: '16px'
+                  cursor: hasProfile ? 'pointer' : 'not-allowed',
+                  marginRight: '16px',
+                  opacity: hasProfile ? 1 : 0.6
                 }}
+                title={!hasProfile ? 'Create a company profile to manage jobs' : ''}
               >
                 Manage Jobs
               </button>
               <button 
                 className="btn btn-secondary"
-                onClick={() => setActiveTab('applications')}
+                onClick={() => hasProfile && setActiveTab('applications')}
+                disabled={!hasProfile}
                 style={{
                   padding: '12px 24px',
-                  backgroundColor: 'white',
-                  color: '#3b82f6',
-                  border: '2px solid #3b82f6',
+                  backgroundColor: hasProfile ? 'white' : '#f3f4f6',
+                  color: hasProfile ? '#3b82f6' : '#9ca3af',
+                  border: hasProfile ? '2px solid #3b82f6' : '2px solid #d1d5db',
                   borderRadius: '8px',
                   fontSize: '16px',
                   fontWeight: '500',
-                  cursor: 'pointer'
+                  cursor: hasProfile ? 'pointer' : 'not-allowed',
+                  opacity: hasProfile ? 1 : 0.6
                 }}
+                title={!hasProfile ? 'Create a company profile to view applications' : ''}
               >
                 View Applications
               </button>
@@ -167,7 +172,12 @@ const EmployerDashboard: React.FC = () => {
             
             <div className="job-stats" style={{ marginTop: '48px' }}>
               <h3>Quick Overview</h3>
-              <p>Use the tabs above to manage your job postings and review applications from candidates.</p>
+              <p>
+                {hasProfile 
+                  ? 'Use the tabs above to manage your job postings and review applications from candidates.'
+                  : 'Complete your company profile to unlock job posting and application management features.'
+                }
+              </p>
             </div>
           </div>
         );
@@ -204,33 +214,39 @@ const EmployerDashboard: React.FC = () => {
           </button>
           <button 
             className={`btn ${activeTab === 'jobs' ? 'btn-primary' : 'btn-secondary'}`}
-            onClick={() => setActiveTab('jobs')}
+            onClick={() => hasProfile && setActiveTab('jobs')}
+            disabled={!hasProfile}
             style={{
               padding: '8px 16px',
-              backgroundColor: activeTab === 'jobs' ? '#3b82f6' : 'white',
-              color: activeTab === 'jobs' ? 'white' : '#3b82f6',
-              border: '2px solid #3b82f6',
+              backgroundColor: hasProfile ? (activeTab === 'jobs' ? '#3b82f6' : 'white') : '#f3f4f6',
+              color: hasProfile ? (activeTab === 'jobs' ? 'white' : '#3b82f6') : '#9ca3af',
+              border: hasProfile ? '2px solid #3b82f6' : '2px solid #d1d5db',
               borderRadius: '6px',
               fontSize: '14px',
               fontWeight: '500',
-              cursor: 'pointer'
+              cursor: hasProfile ? 'pointer' : 'not-allowed',
+              opacity: hasProfile ? 1 : 0.6
             }}
+            title={!hasProfile ? 'Create a company profile to access job postings' : ''}
           >
             Job Postings
           </button>
           <button 
             className={`btn ${activeTab === 'applications' ? 'btn-primary' : 'btn-secondary'}`}
-            onClick={() => setActiveTab('applications')}
+            onClick={() => hasProfile && setActiveTab('applications')}
+            disabled={!hasProfile}
             style={{
               padding: '8px 16px',
-              backgroundColor: activeTab === 'applications' ? '#3b82f6' : 'white',
-              color: activeTab === 'applications' ? 'white' : '#3b82f6',
-              border: '2px solid #3b82f6',
+              backgroundColor: hasProfile ? (activeTab === 'applications' ? '#3b82f6' : 'white') : '#f3f4f6',
+              color: hasProfile ? (activeTab === 'applications' ? 'white' : '#3b82f6') : '#9ca3af',
+              border: hasProfile ? '2px solid #3b82f6' : '2px solid #d1d5db',
               borderRadius: '6px',
               fontSize: '14px',
               fontWeight: '500',
-              cursor: 'pointer'
+              cursor: hasProfile ? 'pointer' : 'not-allowed',
+              opacity: hasProfile ? 1 : 0.6
             }}
+            title={!hasProfile ? 'Create a company profile to access applications' : ''}
           >
             Applications
           </button>

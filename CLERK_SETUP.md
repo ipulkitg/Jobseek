@@ -62,3 +62,4 @@ Once authentication is working, you can:
 3. Access protected dashboards
 4. Continue with job board features development
 
+

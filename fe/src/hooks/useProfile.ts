@@ -29,7 +29,7 @@ export const useProfile = () => {
     };
 
     loadProfile();
-  }, [isLoaded, isSignedIn]);
+  }, [isLoaded, isSignedIn, user]);
 
   const createProfile = async (profileData: any) => {
     try {

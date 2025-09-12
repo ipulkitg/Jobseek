@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { api } from '../services/api';
 import { useAuth } from '../hooks/useAuth';
 import JobApplicationModal from '../components/JobApplicationModal';
@@ -37,9 +38,11 @@ interface USState {
 
 const JobListingPage: React.FC = () => {
   const { isSignedIn, isLoaded } = useAuth();
+  const navigate = useNavigate();
   const [jobs, setJobs] = useState<JobPosting[]>([]);
   const [categories, setCategories] = useState<JobCategory[]>([]);
   const [states, setStates] = useState<USState[]>([]);
+  const [appliedJobs, setAppliedJobs] = useState<Set<string>>(new Set()); // Track applied job IDs
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   
@@ -56,39 +59,8 @@ const JobListingPage: React.FC = () => {
   const [selectedJob, setSelectedJob] = useState<JobPosting | null>(null);
   const [showApplicationModal, setShowApplicationModal] = useState(false);
 
-  // Load initial data
-  useEffect(() => {
-    if (isLoaded && isSignedIn) {
-      loadInitialData();
-    }
-  }, [isLoaded, isSignedIn]);
-
-  // Load jobs when filters change
-  useEffect(() => {
-    if (isLoaded && isSignedIn) {
-      loadJobs();
-    }
-  }, [isLoaded, isSignedIn, searchTerm, selectedCategory, selectedState, selectedCity, salaryMin, salaryMax]);
-
-  const loadInitialData = async () => {
-    try {
-      const [categoriesRes, statesRes] = await Promise.all([
-        api.get('/jobs/categories'),
-        api.get('/jobs/states')
-      ]);
-      
-      setCategories(categoriesRes.data);
-      setStates(statesRes.data);
-      await loadJobs();
-    } catch (err) {
-      setError('Failed to load initial data');
-      console.error('Error loading initial data:', err);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const loadJobs = async () => {
+  // Define callback functions first
+  const loadJobs = useCallback(async () => {
     try {
       const params = new URLSearchParams();
       
@@ -108,7 +80,78 @@ const JobListingPage: React.FC = () => {
       setError('Failed to load jobs');
       console.error('Error loading jobs:', err);
     }
-  };
+  }, [searchTerm, selectedCategory, selectedState, selectedCity, salaryMin, salaryMax]);
+
+  const loadAppliedJobs = useCallback(async () => {
+    if (!isSignedIn || !isLoaded) {
+      console.log('👤 loadAppliedJobs: User not signed in or not loaded, skipping');
+      return;
+    }
+
+    // Temporarily use localStorage as primary method while backend issues are resolved
+    console.log('🔍 loadAppliedJobs: Loading applied jobs from localStorage (temporary workaround)');
+    const storedApplied = localStorage.getItem('appliedJobs');
+    if (storedApplied) {
+      try {
+        const parsed = JSON.parse(storedApplied);
+        setAppliedJobs(new Set(parsed));
+        console.log('✅ loadAppliedJobs: Loaded applied jobs from localStorage:', parsed);
+      } catch (parseErr) {
+        console.error('❌ loadAppliedJobs: Failed to parse stored applied jobs:', parseErr);
+        setAppliedJobs(new Set()); // Reset to empty set on parse error
+      }
+    } else {
+      console.log('🔍 loadAppliedJobs: No localStorage data, starting with empty applied jobs set');
+      setAppliedJobs(new Set());
+    }
+
+    // TODO: Re-enable backend integration once endpoints are fixed
+    // try {
+    //   console.log('🔍 loadAppliedJobs: Fetching applied jobs from /jobs/applied-jobs...');
+    //   const appliedJobIds = await api.get('/jobs/applied-jobs');
+    //   console.log('✅ loadAppliedJobs: Loaded applied jobs from applied-jobs endpoint:', appliedJobIds);
+    //   setAppliedJobs(new Set(appliedJobIds));
+    // } catch (err) {
+    //   console.error('❌ loadAppliedJobs: Backend endpoints still failing, using localStorage fallback');
+    // }
+  }, [isSignedIn, isLoaded]);
+
+  const loadInitialData = useCallback(async () => {
+    try {
+      const [categoriesRes, statesRes] = await Promise.all([
+        api.get('/jobs/categories'),
+        api.get('/jobs/states')
+      ]);
+      
+      setCategories(categoriesRes.data);
+      setStates(statesRes.data);
+      await Promise.all([
+        loadJobs(),
+        loadAppliedJobs()
+      ]);
+    } catch (err) {
+      setError('Failed to load initial data');
+      console.error('Error loading initial data:', err);
+    } finally {
+      setLoading(false);
+    }
+  }, [loadJobs, loadAppliedJobs]);
+
+  // Load initial data
+  useEffect(() => {
+    if (isLoaded && isSignedIn) {
+      loadInitialData();
+    }
+  }, [isLoaded, isSignedIn, loadInitialData]);
+
+  // Load jobs when filters change
+  useEffect(() => {
+    if (isLoaded && isSignedIn) {
+      loadJobs();
+    }
+  }, [isLoaded, isSignedIn, loadJobs]);
+
+
 
   const clearFilters = () => {
     setSearchTerm('');
@@ -119,14 +162,52 @@ const JobListingPage: React.FC = () => {
     setSalaryMax('');
   };
 
-  const handleApplyClick = (job: JobPosting) => {
+  const handleApplyClick = (e: React.MouseEvent, job: JobPosting) => {
+    e.stopPropagation(); // Prevent triggering the job click event
+    console.log('🔍 handleApplyClick: Clicked apply for job:', job.id);
+    console.log('🔍 handleApplyClick: Applied jobs set:', Array.from(appliedJobs));
+    console.log('🔍 handleApplyClick: Is job already applied?', appliedJobs.has(job.id));
+    
+    // Prevent applying if already applied
+    if (appliedJobs.has(job.id)) {
+      console.log('⚠️ handleApplyClick: User already applied to this job, preventing modal');
+      return;
+    }
+    
+    console.log('✅ handleApplyClick: Opening application modal');
     setSelectedJob(job);
     setShowApplicationModal(true);
   };
 
+  const handleJobClick = (jobId: string) => {
+    console.log('🔍 handleJobClick: Navigating to job details:', jobId);
+    navigate(`/jobs/${jobId}`);
+  };
+
+  const handleViewDetailsClick = (e: React.MouseEvent, jobId: string) => {
+    e.stopPropagation(); // Prevent triggering the job click event
+    console.log('🔍 handleViewDetailsClick: Navigating to job details:', jobId);
+    navigate(`/jobs/${jobId}`);
+  };
+
   const handleApplicationSuccess = () => {
-    // Optionally refresh the job list or show a success message
-    console.log('Application submitted successfully');
+    // Add the job to applied jobs set immediately for instant UI feedback
+    if (selectedJob) {
+      console.log('🎉 handleApplicationSuccess: Processing successful application for job:', selectedJob.id);
+      
+      const newAppliedJobs = new Set(appliedJobs).add(selectedJob.id);
+      setAppliedJobs(newAppliedJobs);
+      
+      // Persist to localStorage - this is our primary storage for now
+      localStorage.setItem('appliedJobs', JSON.stringify(Array.from(newAppliedJobs)));
+      console.log('✅ handleApplicationSuccess: Updated state and persisted to localStorage');
+      console.log('✅ Applied jobs now:', Array.from(newAppliedJobs));
+      
+      // Note: Backend sync will be re-enabled once endpoints are fixed
+    } else {
+      console.error('❌ handleApplicationSuccess: No selected job found!');
+    }
+    console.log('🎉 handleApplicationSuccess: Application submitted successfully');
   };
 
   const formatSalary = (min: number | null, max: number | null) => {
@@ -376,6 +457,7 @@ const JobListingPage: React.FC = () => {
           jobs.map(job => (
             <div
               key={job.id}
+              onClick={() => handleJobClick(job.id)}
               style={{
                 backgroundColor: 'white',
                 padding: '24px',
@@ -410,7 +492,7 @@ const JobListingPage: React.FC = () => {
                     margin: '0 0 8px 0',
                     fontWeight: '500'
                   }}>
-                    {job.employer.companyName}
+                    {job.employer?.companyName || 'Unknown Company'}
                   </p>
                   <div style={{ display: 'flex', gap: '16px', alignItems: 'center', marginBottom: '12px' }}>
                     <span style={{
@@ -421,10 +503,10 @@ const JobListingPage: React.FC = () => {
                       fontSize: '12px',
                       fontWeight: '500'
                     }}>
-                      {job.category.name}
+                      {job.category?.name || 'Unknown Category'}
                     </span>
                     <span style={{ color: '#6b7280', fontSize: '14px' }}>
-                      📍 {job.locationCity}, {job.locationStateRef.name}
+                      📍 {job.locationCity}, {job.locationStateRef?.name || 'Unknown State'}
                     </span>
                     <span style={{ color: '#6b7280', fontSize: '14px' }}>
                       💰 {formatSalary(job.salaryMin, job.salaryMax)}
@@ -453,22 +535,47 @@ const JobListingPage: React.FC = () => {
               
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <div style={{ display: 'flex', gap: '12px' }}>
+                  {(() => {
+                    const isApplied = appliedJobs.has(job.id);
+                    console.log(`🔍 Button render for job ${job.id}: isApplied=${isApplied}, appliedJobs size=${appliedJobs.size}`);
+                    
+                    return isApplied ? (
+                      <button
+                        disabled
+                        style={{
+                          padding: '8px 16px',
+                          backgroundColor: '#10b981',
+                          color: 'white',
+                          border: 'none',
+                          borderRadius: '6px',
+                          fontSize: '14px',
+                          fontWeight: '500',
+                          cursor: 'not-allowed',
+                          opacity: 0.8
+                        }}
+                      >
+                        ✓ Applied
+                      </button>
+                    ) : (
+                      <button
+                        onClick={(e) => handleApplyClick(e, job)}
+                        style={{
+                          padding: '8px 16px',
+                          backgroundColor: '#3b82f6',
+                          color: 'white',
+                          border: 'none',
+                          borderRadius: '6px',
+                          fontSize: '14px',
+                          fontWeight: '500',
+                          cursor: 'pointer'
+                        }}
+                      >
+                        Apply Now
+                      </button>
+                    );
+                  })()}
                   <button
-                    onClick={() => handleApplyClick(job)}
-                    style={{
-                      padding: '8px 16px',
-                      backgroundColor: '#3b82f6',
-                      color: 'white',
-                      border: 'none',
-                      borderRadius: '6px',
-                      fontSize: '14px',
-                      fontWeight: '500',
-                      cursor: 'pointer'
-                    }}
-                  >
-                    Apply Now
-                  </button>
-                  <button
+                    onClick={(e) => handleViewDetailsClick(e, job.id)}
                     style={{
                       padding: '8px 16px',
                       backgroundColor: 'white',

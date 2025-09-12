@@ -16,15 +16,25 @@ export const api = {
     
     if (!response.ok) {
       let errorMessage = `HTTP ${response.status}: ${response.statusText}`;
+      let fullErrorDetails = '';
       try {
         const errorData = await response.json();
         console.log('🌐 API GET Error data:', errorData);
+        fullErrorDetails = JSON.stringify(errorData, null, 2);
         if (errorData.detail) {
           errorMessage = errorData.detail;
         }
       } catch {
         // Ignore JSON parsing errors, use default message
+        console.log('🌐 API GET: Could not parse error response as JSON');
       }
+      console.error('❌ API GET Failed:', {
+        url: `${API_BASE_URL}${endpoint}`,
+        status: response.status,
+        statusText: response.statusText,
+        errorMessage,
+        fullErrorDetails
+      });
       throw new Error(errorMessage);
     }
     
@@ -35,12 +45,26 @@ export const api = {
 
   async post(endpoint: string, data?: any) {
     console.log('🌐 API POST:', `${API_BASE_URL}${endpoint}`, 'Data:', data);
+    
+    // Get CSRF token from cookie
+    const csrfToken = document.cookie
+      .split('; ')
+      .find(row => row.startsWith('csrf='))
+      ?.split('=')[1];
+    
+    const headers: Record<string, string> = {
+      'Content-Type': 'application/json',
+    };
+    
+    if (csrfToken) {
+      headers['X-CSRF-Token'] = csrfToken;
+      console.log('🔐 API POST: Including CSRF token');
+    }
+    
     const response = await fetch(`${API_BASE_URL}${endpoint}`, {
       method: 'POST',
       credentials: 'include', // Include cookies
-      headers: {
-        'Content-Type': 'application/json',
-      },
+      headers,
       body: data ? JSON.stringify(data) : undefined,
     });
     
@@ -48,15 +72,26 @@ export const api = {
     
     if (!response.ok) {
       let errorMessage = `HTTP ${response.status}: ${response.statusText}`;
+      let fullErrorDetails = '';
       try {
         const errorData = await response.json();
         console.log('🌐 API POST Error data:', errorData);
+        fullErrorDetails = JSON.stringify(errorData, null, 2);
         if (errorData.detail) {
           errorMessage = errorData.detail;
         }
       } catch {
         // Ignore JSON parsing errors, use default message
+        console.log('🌐 API POST: Could not parse error response as JSON');
       }
+      console.error('❌ API POST Failed:', {
+        url: `${API_BASE_URL}${endpoint}`,
+        status: response.status,
+        statusText: response.statusText,
+        errorMessage,
+        fullErrorDetails,
+        requestData: data
+      });
       throw new Error(errorMessage);
     }
     
@@ -67,12 +102,26 @@ export const api = {
 
   async put(endpoint: string, data?: any) {
     console.log('🌐 API PUT:', `${API_BASE_URL}${endpoint}`, 'Data:', data);
+    
+    // Get CSRF token from cookie
+    const csrfToken = document.cookie
+      .split('; ')
+      .find(row => row.startsWith('csrf='))
+      ?.split('=')[1];
+    
+    const headers: Record<string, string> = {
+      'Content-Type': 'application/json',
+    };
+    
+    if (csrfToken) {
+      headers['X-CSRF-Token'] = csrfToken;
+      console.log('🔐 API PUT: Including CSRF token');
+    }
+    
     const response = await fetch(`${API_BASE_URL}${endpoint}`, {
       method: 'PUT',
       credentials: 'include', // Include cookies
-      headers: {
-        'Content-Type': 'application/json',
-      },
+      headers,
       body: data ? JSON.stringify(data) : undefined,
     });
     

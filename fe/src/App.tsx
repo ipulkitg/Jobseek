@@ -11,6 +11,12 @@ import EmployerDashboard from './pages/EmployerDashboard';
 import ProfileSetup from './pages/ProfileSetup';
 import ProfileView from './pages/ProfileView';
 import AuthInitializer from './components/AuthInitializer';
+import EmployerSignUp from './pages/EmployerSignUp';
+import JobSeekerSignUp from './pages/JobSeekerSignUp';
+import EmployerSignIn from './pages/EmployerSignIn';
+import JobSeekerSignIn from './pages/JobSeekerSignIn';
+import DebugProfile from './pages/DebugProfile';
+import JobDetailsPage from './pages/JobDetailsPage';
 
 const clerkPubKey = process.env.REACT_APP_CLERK_PUBLISHABLE_KEY;
 
@@ -61,7 +67,24 @@ function App() {
         <div className="App">
           <Routes>
             <Route path="/" element={<HomePage />} />
+            
+            {/* Legacy login page - redirect to homepage */}
             <Route path="/login" element={<ClerkLoginPage />} />
+            
+            {/* Job Seeker Routes */}
+            <Route path="/job-seeker/sign-up" element={<JobSeekerSignUp />} />
+            <Route path="/job-seeker/sign-in" element={<JobSeekerSignIn />} />
+            <Route path="/job-seeker" element={<JobSeekerDashboard />} />
+            
+            {/* Employer Routes */}
+            <Route path="/employer/sign-up" element={<EmployerSignUp />} />
+            <Route path="/employer/sign-in" element={<EmployerSignIn />} />
+            <Route path="/employer" element={<EmployerDashboard />} />
+            
+            {/* Job Details Route */}
+            <Route path="/jobs/:jobId" element={<JobDetailsPage />} />
+            
+            {/* Generic auth routes */}
             <Route path="/sign-in" element={
               <div style={{
                 minHeight: '100vh',
@@ -86,10 +109,11 @@ function App() {
                 <SignUp redirectUrl="/login" />
               </div>
             } />
+            
+            {/* Profile Routes */}
             <Route path="/profile-setup" element={<ProfileSetup />} />
             <Route path="/profile" element={<ProfileView />} />
-            <Route path="/job-seeker" element={<JobSeekerDashboard />} />
-            <Route path="/employer" element={<EmployerDashboard />} />
+            <Route path="/debug" element={<DebugProfile />} />
           </Routes>
         </div>
       </Router>

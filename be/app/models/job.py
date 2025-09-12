@@ -1,5 +1,5 @@
 from pydantic import BaseModel
-from typing import Optional, List
+from typing import Optional, List, Any
 from datetime import datetime
 from enum import Enum
 
@@ -36,10 +36,10 @@ class JobPostingUpdate(BaseModel):
 
 class JobPosting(JobPostingBase):
     id: str
-    employer_id: str
-    is_active: bool
-    created_at: datetime
-    updated_at: datetime
+    employerId: str
+    isActive: bool
+    createdAt: datetime
+    updatedAt: datetime
 
     class Config:
         from_attributes = True
@@ -48,19 +48,23 @@ class JobApplicationBase(BaseModel):
     job_posting_id: str
     cover_letter: Optional[str] = None
 
-class JobApplicationCreate(JobApplicationBase):
-    pass
+class JobApplicationCreate(BaseModel):
+    cover_letter: Optional[str] = None
 
 class JobApplicationUpdate(BaseModel):
     status: Optional[ApplicationStatus] = None
     cover_letter: Optional[str] = None
 
-class JobApplication(JobApplicationBase):
+class JobApplication(BaseModel):
     id: str
-    job_seeker_id: str
+    jobPostingId: str
+    jobSeekerId: str  
     status: ApplicationStatus
-    applied_at: datetime
-    updated_at: datetime
+    coverLetter: Optional[str] = None
+    appliedAt: datetime
+    updatedAt: datetime
+    jobPosting: Optional[Any] = None
+    jobSeeker: Optional[Any] = None
 
     class Config:
         from_attributes = True

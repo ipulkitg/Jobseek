@@ -99,3 +99,4 @@ async def get_session_user(request: Request):
     return {"id": session["user_id"]}
 
 
+

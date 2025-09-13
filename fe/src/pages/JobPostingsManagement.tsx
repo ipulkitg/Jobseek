@@ -84,21 +84,31 @@ const JobPostingsManagement: React.FC = () => {
   };
 
   const handleEditJob = (job: JobPosting) => {
+    if (!job || !job.id) {
+      console.error('❌ handleEditJob: Invalid job object passed:', job);
+      return;
+    }
+
     setEditingJob({
       id: job.id,
-      title: job.title,
-      description: job.description,
-      requirements: job.requirements,
-      locationState: job.locationState,
-      locationCity: job.locationCity,
+      title: job.title || '',
+      description: job.description || '',
+      requirements: job.requirements || '',
+      locationState: job.locationState || '',
+      locationCity: job.locationCity || '',
       salaryMin: job.salaryMin,
       salaryMax: job.salaryMax,
-      categoryId: job.category.id
+      categoryId: job.category?.id || ''
     });
     setShowJobForm(true);
   };
 
   const handleDeleteJob = async (jobId: string) => {
+    if (!jobId) {
+      console.error('❌ handleDeleteJob: Invalid jobId provided');
+      return;
+    }
+
     if (window.confirm('Are you sure you want to delete this job posting? This action cannot be undone.')) {
       try {
         await api.delete(`/jobs/${jobId}`);
@@ -110,13 +120,18 @@ const JobPostingsManagement: React.FC = () => {
   };
 
   const handleToggleJobStatus = async (jobId: string, currentStatus: boolean) => {
+    if (!jobId) {
+      console.error('❌ handleToggleJobStatus: Invalid jobId provided');
+      return;
+    }
+
     try {
       await api.put(`/jobs/${jobId}`, {
         is_active: !currentStatus
       });
-      setJobPostings(prev => 
-        prev.map(job => 
-          job.id === jobId 
+      setJobPostings(prev =>
+        prev.map(job =>
+          job.id === jobId
             ? { ...job, isActive: !currentStatus }
             : job
         )
@@ -499,14 +514,14 @@ const JobPostingsManagement: React.FC = () => {
         }}>
           {jobPostings.map(job => (
             <div
-              key={job.id}
+              key={job?.id || 'unknown'}
               style={{
                 backgroundColor: 'white',
                 padding: '24px',
                 borderRadius: '12px',
                 boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
                 border: '1px solid #e5e7eb',
-                opacity: job.isActive ? 1 : 0.7
+                opacity: job?.isActive ? 1 : 0.7
               }}
             >
               <div style={{
@@ -528,17 +543,17 @@ const JobPostingsManagement: React.FC = () => {
                       color: '#1f2937',
                       margin: '0'
                     }}>
-                      {job.title}
+                      {job?.title || 'Untitled Job'}
                     </h3>
                     <span style={{
                       padding: '4px 8px',
-                      backgroundColor: job.isActive ? '#10b981' : '#6b7280',
+                      backgroundColor: job?.isActive ? '#10b981' : '#6b7280',
                       color: 'white',
                       borderRadius: '4px',
                       fontSize: '12px',
                       fontWeight: '500'
                     }}>
-                      {job.isActive ? 'Active' : 'Inactive'}
+                      {job?.isActive ? 'Active' : 'Inactive'}
                     </span>
                   </div>
                   
@@ -556,16 +571,16 @@ const JobPostingsManagement: React.FC = () => {
                       fontSize: '12px',
                       fontWeight: '500'
                     }}>
-                      {job.category?.name || 'Unknown Category'}
+                      {job?.category?.name || 'Unknown Category'}
                     </span>
                     <span style={{ color: '#6b7280', fontSize: '14px' }}>
-                      📍 {job.locationCity}, {job.locationStateRef?.name || 'Unknown State'}
+                      📍 {job?.locationCity || 'Unknown City'}, {job?.locationStateRef?.name || 'Unknown State'}
                     </span>
                     <span style={{ color: '#6b7280', fontSize: '14px' }}>
-                      💰 {formatSalary(job.salaryMin, job.salaryMax)}
+                      💰 {formatSalary(job?.salaryMin, job?.salaryMax)}
                     </span>
                     <span style={{ color: '#6b7280', fontSize: '14px' }}>
-                      📝 {job._count?.jobApplications || 0} application{(job._count?.jobApplications || 0) !== 1 ? 's' : ''}
+                      📝 {job?._count?.jobApplications || 0} application{(job?._count?.jobApplications || 0) !== 1 ? 's' : ''}
                     </span>
                   </div>
                 </div>
@@ -580,7 +595,7 @@ const JobPostingsManagement: React.FC = () => {
                     color: '#9ca3af',
                     fontSize: '14px'
                   }}>
-                    Created {formatDate(job.createdAt)}
+                    Created {job?.createdAt ? formatDate(job.createdAt) : 'Unknown'}
                   </span>
                 </div>
               </div>
@@ -604,7 +619,7 @@ const JobPostingsManagement: React.FC = () => {
               }}>
                 <div style={{ display: 'flex', gap: '12px' }}>
                   <button
-                    onClick={() => handleEditJob(job)}
+                    onClick={() => job?.id && handleEditJob(job)}
                     style={{
                       padding: '8px 16px',
                       backgroundColor: '#3b82f6',
@@ -619,7 +634,7 @@ const JobPostingsManagement: React.FC = () => {
                     Edit
                   </button>
                   <button
-                    onClick={() => handleToggleJobStatus(job.id, job.isActive)}
+                    onClick={() => job?.id && handleToggleJobStatus(job.id, job.isActive)}
                     style={{
                       padding: '8px 16px',
                       backgroundColor: job.isActive ? '#f59e0b' : '#10b981',
@@ -634,7 +649,7 @@ const JobPostingsManagement: React.FC = () => {
                     {job.isActive ? 'Deactivate' : 'Activate'}
                   </button>
                   <button
-                    onClick={() => handleDeleteJob(job.id)}
+                    onClick={() => job?.id && handleDeleteJob(job.id)}
                     style={{
                       padding: '8px 16px',
                       backgroundColor: '#ef4444',
@@ -654,7 +669,7 @@ const JobPostingsManagement: React.FC = () => {
                   fontSize: '12px',
                   color: '#9ca3af'
                 }}>
-                  Job ID: {job.id.slice(0, 8)}...
+                  Job ID: {job?.id ? job.id.slice(0, 8) : 'unknown'}...
                 </div>
               </div>
             </div>

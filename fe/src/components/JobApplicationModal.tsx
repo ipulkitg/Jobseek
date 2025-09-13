@@ -32,28 +32,23 @@ const JobApplicationModal: React.FC<JobApplicationModalProps> = ({
     setError(null);
 
     try {
-      console.log('📝 JobApplicationModal: Submitting application for job:', job.id);
       await api.post(`/jobs/${job.id}/apply`, {
         cover_letter: coverLetter
       });
-      
-      console.log('✅ JobApplicationModal: Application submitted successfully');
+
       onSuccess();
       onClose();
       setCoverLetter('');
     } catch (err: any) {
-      console.error('❌ JobApplicationModal: Application failed:', err);
       const errorMessage = err.message || 'Failed to submit application';
-      
+
       // If user already applied, show a better message and close modal
       if (errorMessage.includes('already applied')) {
-        console.log('⚠️ JobApplicationModal: User already applied, treating as success');
         // If they already applied, treat it as a success for UI purposes
         onSuccess();
         onClose();
         setCoverLetter('');
       } else {
-        console.error('❌ JobApplicationModal: Showing error to user:', errorMessage);
         setError(errorMessage);
       }
     } finally {
@@ -253,6 +248,9 @@ const JobApplicationModal: React.FC<JobApplicationModalProps> = ({
 };
 
 export default JobApplicationModal;
+
+
+
 
 
 

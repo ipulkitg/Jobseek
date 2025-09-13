@@ -51,11 +51,15 @@ const JobDetailsPage: React.FC = () => {
         console.log('✅ JobDetailsPage: Loaded job data:', jobData);
         setJob(jobData);
 
-        // Check if user has applied to this job
-        const storedApplied = localStorage.getItem('appliedJobs');
-        if (storedApplied) {
-          const appliedJobs = JSON.parse(storedApplied);
-          setIsApplied(appliedJobs.includes(jobId));
+        // Check if user has applied to this job using the API
+        if (isSignedIn) {
+          try {
+            const appliedJobs = await api.get('/jobs/applied-jobs');
+            setIsApplied(appliedJobs.includes(jobId));
+          } catch (applyErr) {
+            console.log('⚠️ JobDetailsPage: Could not check application status, assuming not applied');
+            setIsApplied(false);
+          }
         }
       } catch (err) {
         console.error('❌ JobDetailsPage: Failed to load job details:', err);
@@ -66,7 +70,7 @@ const JobDetailsPage: React.FC = () => {
     };
 
     loadJobDetails();
-  }, [jobId]);
+  }, [jobId, isSignedIn]);
 
   const handleApplyClick = () => {
     if (isApplied || !job) return;
@@ -74,18 +78,8 @@ const JobDetailsPage: React.FC = () => {
   };
 
   const handleApplicationSuccess = () => {
-    if (job) {
-      // Update applied state
-      setIsApplied(true);
-      
-      // Update localStorage
-      const storedApplied = localStorage.getItem('appliedJobs');
-      const appliedJobs = storedApplied ? JSON.parse(storedApplied) : [];
-      if (!appliedJobs.includes(job.id)) {
-        appliedJobs.push(job.id);
-        localStorage.setItem('appliedJobs', JSON.stringify(appliedJobs));
-      }
-    }
+    // Update applied state - the API will handle persistence
+    setIsApplied(true);
   };
 
   const formatSalary = (min: number | null, max: number | null) => {

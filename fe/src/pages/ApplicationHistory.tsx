@@ -5,7 +5,7 @@ import { useAuth } from '../hooks/useAuth';
 
 interface AppliedJob {
   jobId: string;
-  appliedAt: string; // We'll generate this from localStorage or use current date
+  appliedAt: string;
 }
 
 interface JobPosting {
@@ -41,46 +41,39 @@ const ApplicationHistory: React.FC = () => {
 
   const loadApplications = async () => {
     try {
-      console.log('🔍 ApplicationHistory: Loading applications from localStorage');
-      
-      // Get applied jobs from localStorage
-      const storedApplied = localStorage.getItem('appliedJobs');
-      if (!storedApplied) {
-        console.log('📝 ApplicationHistory: No applied jobs found in localStorage');
-        setAppliedJobs([]);
-        setLoading(false);
-        return;
-      }
+      console.log('🔍 ApplicationHistory: Loading applications from API');
 
-      const jobIds = JSON.parse(storedApplied);
-      console.log('✅ ApplicationHistory: Found applied job IDs:', jobIds);
+      // Get applications from the API
+      const applications = await api.get('/jobs/applications');
+      console.log('✅ ApplicationHistory: Found applications:', applications);
 
-      // Create applied jobs array with timestamps (we don't have real timestamps, so we'll use a default)
-      const appliedJobsArray = jobIds.map((jobId: string) => ({
-        jobId,
-        appliedAt: new Date().toISOString() // Default timestamp - in real app this would come from backend
+      // Transform the API response to our expected format
+      const appliedJobsArray = applications.map((app: any) => ({
+        jobId: app.jobPostingId,
+        appliedAt: app.appliedAt
       }));
-      
+
       setAppliedJobs(appliedJobsArray);
 
-      // Fetch job details for each applied job
+      // Create job details map from the API response
       const jobDetailsMap: { [key: string]: JobPosting } = {};
-      
-      for (const jobId of jobIds) {
+
+      for (const app of applications) {
         try {
-          console.log(`🔍 ApplicationHistory: Fetching details for job ${jobId}`);
-          const jobDetail = await api.get(`/jobs/${jobId}`);
-          jobDetailsMap[jobId] = jobDetail;
-          console.log(`✅ ApplicationHistory: Loaded details for job ${jobId}: ${jobDetail.title}`);
+          const jobId = app.jobPostingId;
+          console.log(`🔍 ApplicationHistory: Processing application for job ${jobId}`);
+          // The job details are already included in the application response
+          jobDetailsMap[jobId] = app.jobPosting;
+          console.log(`✅ ApplicationHistory: Loaded details for job ${jobId}: ${app.jobPosting.title}`);
         } catch (jobErr) {
-          console.error(`❌ ApplicationHistory: Failed to load job ${jobId}:`, jobErr);
-          // Skip jobs that can't be loaded
+          console.error(`❌ ApplicationHistory: Failed to process job ${app.jobPostingId}:`, jobErr);
+          // Skip jobs that can't be processed
         }
       }
 
       setJobDetails(jobDetailsMap);
       setError(null);
-      
+
       console.log('✅ ApplicationHistory: Successfully loaded application history');
     } catch (err: any) {
       console.error('❌ ApplicationHistory: Error loading applications:', err);

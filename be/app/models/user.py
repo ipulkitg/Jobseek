@@ -1,5 +1,5 @@
 from pydantic import BaseModel, Field
-from typing import Optional, List
+from typing import Optional, List, Any
 from datetime import datetime
 from enum import Enum
 
@@ -44,6 +44,9 @@ class UserProfile(UserProfileBase):
     created_at: datetime = Field(alias="createdAt")
     updated_at: datetime = Field(alias="updatedAt")
     location_state_name: Optional[str] = Field(None, alias="locationStateName")
+    job_postings: Optional[List[Any]] = Field(None, alias="jobPostings")
+    applications: Optional[List[Any]] = Field(None, alias="applications")
+    location_state_ref: Optional[Any] = Field(None, alias="locationStateRef")
 
     class Config:
         from_attributes = True

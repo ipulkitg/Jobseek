@@ -88,32 +88,15 @@ const JobListingPage: React.FC = () => {
       return;
     }
 
-    // Temporarily use localStorage as primary method while backend issues are resolved
-    console.log('🔍 loadAppliedJobs: Loading applied jobs from localStorage (temporary workaround)');
-    const storedApplied = localStorage.getItem('appliedJobs');
-    if (storedApplied) {
-      try {
-        const parsed = JSON.parse(storedApplied);
-        setAppliedJobs(new Set(parsed));
-        console.log('✅ loadAppliedJobs: Loaded applied jobs from localStorage:', parsed);
-      } catch (parseErr) {
-        console.error('❌ loadAppliedJobs: Failed to parse stored applied jobs:', parseErr);
-        setAppliedJobs(new Set()); // Reset to empty set on parse error
-      }
-    } else {
-      console.log('🔍 loadAppliedJobs: No localStorage data, starting with empty applied jobs set');
-      setAppliedJobs(new Set());
+    try {
+      console.log('🔍 loadAppliedJobs: Fetching applied jobs from /jobs/applied-jobs...');
+      const appliedJobIds = await api.get('/jobs/applied-jobs');
+      console.log('✅ loadAppliedJobs: Loaded applied jobs from API:', appliedJobIds);
+      setAppliedJobs(new Set(appliedJobIds));
+    } catch (err) {
+      console.error('❌ loadAppliedJobs: Failed to load applied jobs from API:', err);
+      setAppliedJobs(new Set()); // Reset to empty set on error
     }
-
-    // TODO: Re-enable backend integration once endpoints are fixed
-    // try {
-    //   console.log('🔍 loadAppliedJobs: Fetching applied jobs from /jobs/applied-jobs...');
-    //   const appliedJobIds = await api.get('/jobs/applied-jobs');
-    //   console.log('✅ loadAppliedJobs: Loaded applied jobs from applied-jobs endpoint:', appliedJobIds);
-    //   setAppliedJobs(new Set(appliedJobIds));
-    // } catch (err) {
-    //   console.error('❌ loadAppliedJobs: Backend endpoints still failing, using localStorage fallback');
-    // }
   }, [isSignedIn, isLoaded]);
 
   const loadInitialData = useCallback(async () => {
@@ -194,16 +177,12 @@ const JobListingPage: React.FC = () => {
     // Add the job to applied jobs set immediately for instant UI feedback
     if (selectedJob) {
       console.log('🎉 handleApplicationSuccess: Processing successful application for job:', selectedJob.id);
-      
+
       const newAppliedJobs = new Set(appliedJobs).add(selectedJob.id);
       setAppliedJobs(newAppliedJobs);
-      
-      // Persist to localStorage - this is our primary storage for now
-      localStorage.setItem('appliedJobs', JSON.stringify(Array.from(newAppliedJobs)));
-      console.log('✅ handleApplicationSuccess: Updated state and persisted to localStorage');
+
+      console.log('✅ handleApplicationSuccess: Updated state (API handles persistence)');
       console.log('✅ Applied jobs now:', Array.from(newAppliedJobs));
-      
-      // Note: Backend sync will be re-enabled once endpoints are fixed
     } else {
       console.error('❌ handleApplicationSuccess: No selected job found!');
     }
@@ -460,58 +439,141 @@ const JobListingPage: React.FC = () => {
               onClick={() => handleJobClick(job.id)}
               style={{
                 backgroundColor: 'white',
-                padding: '24px',
-                borderRadius: '12px',
-                boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
-                border: '1px solid #e5e7eb',
-                transition: 'all 0.2s ease',
-                cursor: 'pointer'
+                padding: '32px',
+                borderRadius: '16px',
+                boxShadow: '0 4px 6px rgba(0,0,0,0.05), 0 1px 3px rgba(0,0,0,0.1)',
+                border: '1px solid #f3f4f6',
+                transition: 'all 0.3s ease',
+                cursor: 'pointer',
+                position: 'relative',
+                overflow: 'hidden'
               }}
               onMouseOver={(e) => {
-                e.currentTarget.style.boxShadow = '0 4px 12px rgba(0,0,0,0.15)';
+                e.currentTarget.style.boxShadow = '0 8px 25px rgba(0,0,0,0.1), 0 4px 10px rgba(0,0,0,0.1)';
                 e.currentTarget.style.borderColor = '#3b82f6';
+                e.currentTarget.style.transform = 'translateY(-2px)';
               }}
               onMouseOut={(e) => {
-                e.currentTarget.style.boxShadow = '0 2px 4px rgba(0,0,0,0.1)';
-                e.currentTarget.style.borderColor = '#e5e7eb';
+                e.currentTarget.style.boxShadow = '0 4px 6px rgba(0,0,0,0.05), 0 1px 3px rgba(0,0,0,0.1)';
+                e.currentTarget.style.borderColor = '#f3f4f6';
+                e.currentTarget.style.transform = 'translateY(0)';
               }}
             >
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '16px' }}>
                 <div style={{ flex: 1 }}>
                   <h3 style={{
-                    fontSize: '20px',
-                    fontWeight: '600',
+                    fontSize: '22px',
+                    fontWeight: '700',
                     color: '#1f2937',
-                    margin: '0 0 8px 0'
+                    margin: '0 0 8px 0',
+                    lineHeight: '1.3'
                   }}>
                     {job.title}
                   </h3>
-                  <p style={{
-                    fontSize: '16px',
-                    color: '#3b82f6',
-                    margin: '0 0 8px 0',
-                    fontWeight: '500'
-                  }}>
-                    {job.employer?.companyName || 'Unknown Company'}
-                  </p>
-                  <div style={{ display: 'flex', gap: '16px', alignItems: 'center', marginBottom: '12px' }}>
+
+                  {/* Company and Category Row */}
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '12px', flexWrap: 'wrap' }}>
+                    <p style={{
+                      fontSize: '16px',
+                      color: '#3b82f6',
+                      margin: '0',
+                      fontWeight: '600'
+                    }}>
+                      {job.employer?.companyName || 'Unknown Company'}
+                    </p>
                     <span style={{
-                      backgroundColor: '#f3f4f6',
-                      color: '#374151',
-                      padding: '4px 8px',
-                      borderRadius: '4px',
+                      backgroundColor: '#dbeafe',
+                      color: '#1e40af',
+                      padding: '4px 10px',
+                      borderRadius: '20px',
                       fontSize: '12px',
-                      fontWeight: '500'
+                      fontWeight: '600',
+                      border: '1px solid #bfdbfe'
                     }}>
                       {job.category?.name || 'Unknown Category'}
                     </span>
-                    <span style={{ color: '#6b7280', fontSize: '14px' }}>
-                      📍 {job.locationCity}, {job.locationStateRef?.name || 'Unknown State'}
-                    </span>
-                    <span style={{ color: '#6b7280', fontSize: '14px' }}>
-                      💰 {formatSalary(job.salaryMin, job.salaryMax)}
-                    </span>
                   </div>
+
+                  {/* Location and Salary Row */}
+                  <div style={{ display: 'flex', gap: '20px', alignItems: 'center', marginBottom: '16px', flexWrap: 'wrap' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                      <span style={{ color: '#059669', fontSize: '16px' }}>📍</span>
+                      <span style={{ color: '#374151', fontSize: '14px', fontWeight: '500' }}>
+                        {job.locationCity}, {job.locationStateRef?.name || 'Unknown State'}
+                      </span>
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                      <span style={{ color: '#dc2626', fontSize: '16px' }}>💰</span>
+                      <span style={{ color: '#374151', fontSize: '14px', fontWeight: '600' }}>
+                        {formatSalary(job.salaryMin, job.salaryMax)}
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Job Description */}
+                  {job.description && (
+                    <div style={{ marginBottom: '16px' }}>
+                      <p style={{
+                        color: '#4b5563',
+                        fontSize: '15px',
+                        lineHeight: '1.5',
+                        margin: '0',
+                        display: '-webkit-box',
+                        WebkitLineClamp: '3',
+                        WebkitBoxOrient: 'vertical',
+                        overflow: 'hidden'
+                      }}>
+                        {job.description}
+                      </p>
+                    </div>
+                  )}
+
+                  {/* Requirements */}
+                  {job.requirements && (
+                    <div style={{ marginBottom: '16px' }}>
+                      <h4 style={{
+                        fontSize: '14px',
+                        fontWeight: '600',
+                        color: '#374151',
+                        margin: '0 0 6px 0',
+                        textTransform: 'uppercase',
+                        letterSpacing: '0.5px'
+                      }}>
+                        Requirements
+                      </h4>
+                      <p style={{
+                        color: '#6b7280',
+                        fontSize: '14px',
+                        lineHeight: '1.4',
+                        margin: '0',
+                        display: '-webkit-box',
+                        WebkitLineClamp: '2',
+                        WebkitBoxOrient: 'vertical',
+                        overflow: 'hidden'
+                      }}>
+                        {job.requirements}
+                      </p>
+                    </div>
+                  )}
+
+                  {/* Applied Status */}
+                  {appliedJobs.has(job.id) && (
+                    <div style={{
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '6px',
+                      padding: '6px 12px',
+                      backgroundColor: '#d1fae5',
+                      color: '#065f46',
+                      borderRadius: '20px',
+                      fontSize: '13px',
+                      fontWeight: '600',
+                      border: '1px solid #a7f3d0'
+                    }}>
+                      <span>✓</span>
+                      <span>Applied</span>
+                    </div>
+                  )}
                 </div>
                 <span style={{
                   color: '#9ca3af',
@@ -520,75 +582,75 @@ const JobListingPage: React.FC = () => {
                   {formatDate(job.createdAt)}
                 </span>
               </div>
-              
-              <p style={{
-                color: '#4b5563',
-                lineHeight: '1.6',
-                marginBottom: '16px',
-                display: '-webkit-box',
-                WebkitLineClamp: 3,
-                WebkitBoxOrient: 'vertical',
-                overflow: 'hidden'
+
+              {/* Bottom Actions */}
+              <div style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                paddingTop: '20px',
+                borderTop: '1px solid #f3f4f6'
               }}>
-                {job.description}
-              </p>
-              
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <div style={{ display: 'flex', gap: '12px' }}>
-                  {(() => {
-                    const isApplied = appliedJobs.has(job.id);
-                    console.log(`🔍 Button render for job ${job.id}: isApplied=${isApplied}, appliedJobs size=${appliedJobs.size}`);
-                    
-                    return isApplied ? (
-                      <button
-                        disabled
-                        style={{
-                          padding: '8px 16px',
-                          backgroundColor: '#10b981',
-                          color: 'white',
-                          border: 'none',
-                          borderRadius: '6px',
-                          fontSize: '14px',
-                          fontWeight: '500',
-                          cursor: 'not-allowed',
-                          opacity: 0.8
-                        }}
-                      >
-                        ✓ Applied
-                      </button>
-                    ) : (
-                      <button
-                        onClick={(e) => handleApplyClick(e, job)}
-                        style={{
-                          padding: '8px 16px',
-                          backgroundColor: '#3b82f6',
-                          color: 'white',
-                          border: 'none',
-                          borderRadius: '6px',
-                          fontSize: '14px',
-                          fontWeight: '500',
-                          cursor: 'pointer'
-                        }}
-                      >
-                        Apply Now
-                      </button>
-                    );
-                  })()}
+                <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+                  {!appliedJobs.has(job.id) && (
+                    <button
+                      onClick={(e) => handleApplyClick(e, job)}
+                      style={{
+                        padding: '10px 20px',
+                        backgroundColor: '#3b82f6',
+                        color: 'white',
+                        border: 'none',
+                        borderRadius: '8px',
+                        fontSize: '14px',
+                        fontWeight: '600',
+                        cursor: 'pointer',
+                        transition: 'all 0.2s ease',
+                        boxShadow: '0 1px 3px rgba(59, 130, 246, 0.3)'
+                      }}
+                      onMouseOver={(e) => {
+                        e.currentTarget.style.backgroundColor = '#2563eb';
+                        e.currentTarget.style.boxShadow = '0 2px 8px rgba(59, 130, 246, 0.4)';
+                      }}
+                      onMouseOut={(e) => {
+                        e.currentTarget.style.backgroundColor = '#3b82f6';
+                        e.currentTarget.style.boxShadow = '0 1px 3px rgba(59, 130, 246, 0.3)';
+                      }}
+                    >
+                      Apply Now
+                    </button>
+                  )}
                   <button
                     onClick={(e) => handleViewDetailsClick(e, job.id)}
                     style={{
-                      padding: '8px 16px',
+                      padding: '10px 20px',
                       backgroundColor: 'white',
-                      color: '#3b82f6',
-                      border: '1px solid #3b82f6',
-                      borderRadius: '6px',
+                      color: '#374151',
+                      border: '1px solid #d1d5db',
+                      borderRadius: '8px',
                       fontSize: '14px',
                       fontWeight: '500',
-                      cursor: 'pointer'
+                      cursor: 'pointer',
+                      transition: 'all 0.2s ease'
+                    }}
+                    onMouseOver={(e) => {
+                      e.currentTarget.style.backgroundColor = '#f9fafb';
+                      e.currentTarget.style.borderColor = '#9ca3af';
+                    }}
+                    onMouseOut={(e) => {
+                      e.currentTarget.style.backgroundColor = 'white';
+                      e.currentTarget.style.borderColor = '#d1d5db';
                     }}
                   >
                     View Details
                   </button>
+                </div>
+
+                <div style={{
+                  fontSize: '12px',
+                  color: '#9ca3af',
+                  fontWeight: '500'
+                }}>
+                  Posted {formatDate(job.createdAt)}
                 </div>
               </div>
             </div>

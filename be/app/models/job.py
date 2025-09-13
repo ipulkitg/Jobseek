@@ -1,7 +1,9 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from typing import Optional, List, Any
 from datetime import datetime
 from enum import Enum
+
+from .user import UserProfile
 
 class ApplicationStatus(str, Enum):
     APPLIED = "applied"
@@ -14,11 +16,14 @@ class JobPostingBase(BaseModel):
     title: str
     description: str
     requirements: str
-    location_state: Optional[str] = None
-    location_city: Optional[str] = None
-    salary_min: Optional[int] = None
-    salary_max: Optional[int] = None
-    category_id: Optional[str] = None
+    location_state: Optional[str] = Field(None, alias="locationState")
+    location_city: Optional[str] = Field(None, alias="locationCity")
+    salary_min: Optional[int] = Field(None, alias="salaryMin")
+    salary_max: Optional[int] = Field(None, alias="salaryMax")
+    category_id: Optional[str] = Field(None, alias="categoryId")
+
+    class Config:
+        populate_by_name = True
 
 class JobPostingCreate(JobPostingBase):
     pass
@@ -27,12 +32,15 @@ class JobPostingUpdate(BaseModel):
     title: Optional[str] = None
     description: Optional[str] = None
     requirements: Optional[str] = None
-    location_state: Optional[str] = None
-    location_city: Optional[str] = None
-    salary_min: Optional[int] = None
-    salary_max: Optional[int] = None
-    category_id: Optional[str] = None
-    is_active: Optional[bool] = None
+    location_state: Optional[str] = Field(None, alias="locationState")
+    location_city: Optional[str] = Field(None, alias="locationCity")
+    salary_min: Optional[int] = Field(None, alias="salaryMin")
+    salary_max: Optional[int] = Field(None, alias="salaryMax")
+    category_id: Optional[str] = Field(None, alias="categoryId")
+    is_active: Optional[bool] = Field(None, alias="isActive")
+
+    class Config:
+        populate_by_name = True
 
 class JobPosting(JobPostingBase):
     id: str
@@ -40,6 +48,10 @@ class JobPosting(JobPostingBase):
     isActive: bool
     createdAt: datetime
     updatedAt: datetime
+    employer: Optional[UserProfile] = None
+    category: Optional['JobCategory'] = None
+    locationStateRef: Optional['USState'] = None
+    _count: Optional[dict] = None
 
     class Config:
         from_attributes = True

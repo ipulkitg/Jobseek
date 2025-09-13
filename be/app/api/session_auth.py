@@ -22,26 +22,20 @@ class LoginResponse(BaseModel):
 async def login(request: LoginRequest, response: Response):
     """Login with Clerk token and create session"""
     try:
-        print(f"🔐 LOGIN: Received token, length: {len(request.clerk_token)}")
         # Verify the Clerk JWT token
         payload = clerk_auth.verify_token(request.clerk_token)
-        print(f"🔐 LOGIN: Token verified, payload: {payload}")
-        
+
         user_id = payload.get('sub')
         if not user_id:
             raise HTTPException(status_code=401, detail="Invalid token: missing user ID")
-        
-        print(f"🔐 LOGIN: User ID: {user_id}")
-        
+
         # Check if user has a profile
         user_profile = await prisma.userprofile.find_unique(
             where={"userId": user_id}
         )
-        print(f"🔐 LOGIN: Existing profile: {user_profile}")
-        
+
         # Create session with or without profile
         session_token = await session_auth.create_session(user_id, user_profile)
-        print(f"🔐 LOGIN: Session created: {session_token}")
 
         # Set secure HttpOnly cookie for session
         secure_cookie = settings.environment.lower() == "production"
@@ -86,16 +80,11 @@ async def create_user_profile(
 ):
     """Create user profile after authentication"""
     try:
-        print(f"📋 CREATE PROFILE: User from session: {current_user}")
-        print(f"📋 CREATE PROFILE: Profile data: {profile_data}")
-        
         # Check if profile already exists
         existing_profile = await prisma.userprofile.find_unique(
             where={"userId": current_user["id"]}
         )
-        print(f"📋 CREATE PROFILE: Existing profile check: {existing_profile}")
         if existing_profile:
-            print(f"📋 CREATE PROFILE: Profile already exists, updating instead of creating new one")
             # Update existing profile instead of creating new one
             profile_dict = profile_data.model_dump(by_alias=True)
             user_profile = await prisma.userprofile.update(
@@ -114,15 +103,15 @@ async def create_user_profile(
                 },
                 include={"locationStateRef": True}
             )
-            
+
             # Convert to dict and add state name
             profile_dict = user_profile.model_dump(by_alias=True)
             if user_profile.locationStateRef:
                 profile_dict['locationStateName'] = user_profile.locationStateRef.name
-            
+
             # Update session with new profile
             await session_auth.create_session(current_user["id"], user_profile)
-            
+
             return UserProfile(**profile_dict)
         
         # Create user profile in database
@@ -159,27 +148,23 @@ async def create_user_profile(
 @router.get("/profile", response_model=UserProfile)
 async def get_user_profile(current_user = Depends(get_session_user)):
     """Get current user's profile"""
-    print(f"📋 GET PROFILE: Called with user: {current_user}")
     try:
         user_profile = await prisma.userprofile.find_unique(
             where={"userId": current_user["id"]},
             include={"locationStateRef": True}
         )
-        print(f"📋 GET PROFILE: Profile query result: {user_profile}")
         if not user_profile:
-            print(f"📋 GET PROFILE: No profile found for user {current_user['id']}")
             raise HTTPException(status_code=404, detail="User profile not found")
-        
+
         # Convert to dict and add state name
         profile_dict = user_profile.model_dump(by_alias=True)
         if user_profile.locationStateRef:
             profile_dict['locationStateName'] = user_profile.locationStateRef.name
-        
+
         return UserProfile(**profile_dict)
     except HTTPException:
         raise
     except Exception as e:
-        print(f"📋 GET PROFILE: Exception: {e}")
         raise HTTPException(status_code=400, detail=str(e))
 
 @router.put("/profile", response_model=UserProfile)
@@ -189,30 +174,25 @@ async def update_user_profile(
     # _csrf = Depends(csrf_protect),  # Temporarily disabled for debugging
 ):
     """Update current user's profile"""
-    print(f"📝 UPDATE PROFILE: User: {current_user}")
-    print(f"📝 UPDATE PROFILE: Data received: {profile_data}")
     try:
         # Convert Pydantic model to dict with proper field names using aliases
         profile_dict = profile_data.model_dump(by_alias=True, exclude_unset=True)
         update_data = {k: v for k, v in profile_dict.items() if v is not None}
-            
-        print(f"📝 UPDATE PROFILE: Data to update: {update_data}")
-        
+
         user_profile = await prisma.userprofile.update(
             where={"userId": current_user["id"]},
             data=update_data,
             include={"locationStateRef": True}
         )
-        print(f"📝 UPDATE PROFILE: Updated profile: {user_profile}")
-        
+
         # Convert to dict and add state name
         profile_dict = user_profile.model_dump(by_alias=True)
         if user_profile.locationStateRef:
             profile_dict['locationStateName'] = user_profile.locationStateRef.name
-        
+
         # Update session with new profile
         await session_auth.create_session(current_user["id"], user_profile)
-        
+
         return UserProfile(**profile_dict)
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))

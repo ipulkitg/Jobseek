@@ -72,12 +72,25 @@ export const useProfile = () => {
     }
   };
 
-  const hasProfile = profile && profile.name && profile.name.trim() !== '';
+  const hasCompleteProfile = () => {
+    if (!profile) return false;
+
+    // Check mandatory fields based on role
+    if (profile.role === 'job_seeker') {
+      return !!(profile.name && profile.name.trim() !== '' &&
+                profile.email && profile.email.trim() !== '');
+    } else if (profile.role === 'employer') {
+      return !!(profile.name && profile.name.trim() !== '' &&
+                profile.companyName && profile.companyName.trim() !== '');
+    }
+
+    return false;
+  };
 
   return {
     profile,
     loading,
-    hasProfile,
+    hasCompleteProfile: hasCompleteProfile(),
     createProfile,
     updateProfile,
     refreshProfile,

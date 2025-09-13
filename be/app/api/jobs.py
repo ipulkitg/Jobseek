@@ -98,6 +98,13 @@ async def create_job_posting(
         if user_profile.role != "employer":
             raise HTTPException(status_code=403, detail="Please create an employer profile first to post jobs.")
 
+        # Validate application steps
+        valid_steps = ["personal_info", "technical_assessment", "review_submit"]
+        if job_data.application_steps:
+            for step in job_data.application_steps:
+                if step not in valid_steps:
+                    raise HTTPException(status_code=400, detail=f"Invalid application step: {step}. Valid steps are: {', '.join(valid_steps)}")
+
         job_posting = await prisma.jobposting.create(
             data={
                 "employerId": user_profile.id,
@@ -109,6 +116,7 @@ async def create_job_posting(
                 "salaryMin": job_data.salary_min,
                 "salaryMax": job_data.salary_max,
                 "categoryId": job_data.category_id,
+                "applicationSteps": job_data.application_steps,
             },
             include={
                 "employer": True,
@@ -179,6 +187,7 @@ async def get_user_applications(current_user = Depends(get_current_user)):
     try:
         # Ensure current_user has the right structure
         user_id = current_user.get("id") if isinstance(current_user, dict) else getattr(current_user, "id", None)
+        print(f"Applications - user_id: {user_id}")
         if not user_id:
             return []
 
@@ -186,13 +195,16 @@ async def get_user_applications(current_user = Depends(get_current_user)):
         user_profile = await prisma.userprofile.find_unique(
             where={"userId": user_id}
         )
+        print(f"Applications - user_profile: {user_profile}")
 
         if not user_profile:
             return []
 
         if user_profile.role != "job_seeker":
+            print(f"Applications - user role is {user_profile.role}, not job_seeker")
             return []
 
+        print(f"Applications - querying with jobSeekerId: {user_profile.id}")
         applications = await prisma.jobapplication.find_many(
             where={"jobSeekerId": user_profile.id},
             include={
@@ -205,6 +217,9 @@ async def get_user_applications(current_user = Depends(get_current_user)):
                 }
             }
         )
+        print(f"Applications - query result count: {len(applications)}")
+        if applications:
+            print(f"Applications - first application jobSeekerId: {applications[0].jobSeekerId}")
 
         return applications
     except HTTPException as e:
@@ -217,34 +232,50 @@ async def get_user_applications(current_user = Depends(get_current_user)):
 async def get_applied_job_ids(current_user = Depends(get_current_user)):
     """Get list of job IDs that the current user has applied to"""
     try:
+        print(f"🚨 APPLIED-JOBS ENDPOINT CALLED")
         # Ensure current_user has the right structure
         user_id = current_user.get("id") if isinstance(current_user, dict) else getattr(current_user, "id", None)
+        print(f"🚨 Applied jobs - user_id: {user_id}")
         if not user_id:
+            print("🚨 Applied jobs - no user_id found")
             return []
 
         # Get current user profile
         user_profile = await prisma.userprofile.find_unique(
             where={"userId": user_id}
         )
+        print(f"🚨 Applied jobs - user_profile: {user_profile}")
 
         if not user_profile:
+            print("🚨 Applied jobs - no user profile found")
             return []
 
         if user_profile.role != "job_seeker":
+            print(f"🚨 Applied jobs - user role is {user_profile.role}, not job_seeker")
             return []
 
-        applications = await prisma.jobapplication.find_many(
-            where={"jobSeekerId": user_profile.id},
-            select={"jobPostingId": True}
-        )
+        print(f"🚨 Applied jobs - querying with jobSeekerId: {user_profile.id}")
+        try:
+            applications = await prisma.jobapplication.find_many(
+                where={"jobSeekerId": user_profile.id}
+            )
+            print(f"🚨 Applied jobs - query executed, found {len(applications)} applications")
+            for app in applications:
+                print(f"🚨 Applied jobs - application: id={app.id}, jobPostingId={app.jobPostingId}")
 
-        applied_job_ids = [app.jobPostingId for app in applications]
+            applied_job_ids = [app.jobPostingId for app in applications]
+            print(f"🚨 Applied jobs - returning job IDs: {applied_job_ids}")
 
-        return applied_job_ids
+            return applied_job_ids
+        except Exception as query_error:
+            print(f"🚨 Applied jobs - query error: {query_error}")
+            return []
     except HTTPException as e:
         # Don't re-raise, return empty array instead for this endpoint
+        print(f"🚨 Applied jobs - HTTP exception: {e}")
         return []
     except Exception as e:
+        print(f"🚨 Applied jobs - general exception: {e}")
         return []
 
 @router.get("/{job_id}", response_model=JobPosting)
@@ -290,6 +321,13 @@ async def update_job_posting(
         if not job_posting or job_posting.employerId != user_profile.id:
             raise HTTPException(status_code=404, detail="Job posting not found")
         
+        # Validate application steps
+        valid_steps = ["personal_info", "technical_assessment", "review_submit"]
+        if job_data.application_steps:
+            for step in job_data.application_steps:
+                if step not in valid_steps:
+                    raise HTTPException(status_code=400, detail=f"Invalid application step: {step}. Valid steps are: {', '.join(valid_steps)}")
+
         # Update job posting
         updated_job = await prisma.jobposting.update(
             where={"id": job_id},
@@ -302,6 +340,7 @@ async def update_job_posting(
                 "salaryMin": job_data.salary_min,
                 "salaryMax": job_data.salary_max,
                 "categoryId": job_data.category_id,
+                "applicationSteps": job_data.application_steps or job_posting.applicationSteps,
                 "isActive": job_data.is_active if job_data.is_active is not None else job_posting.isActive,
             }
         )
@@ -375,13 +414,16 @@ async def apply_to_job(
             raise HTTPException(status_code=400, detail="You have already applied to this job posting")
 
         # Create application
-        application = await prisma.jobapplication.create(
-            data={
-                "jobPostingId": job_id,
-                "jobSeekerId": user_profile.id,
-                "coverLetter": application_data.cover_letter,
-            }
-        )
+        create_data = {
+            "jobPostingId": job_id,
+            "jobSeekerId": user_profile.id,
+            "coverLetter": application_data.cover_letter,
+        }
+
+        if application_data.application_data is not None:
+            create_data["applicationData"] = application_data.application_data
+
+        application = await prisma.jobapplication.create(data=create_data)
         return application
 
     except HTTPException:

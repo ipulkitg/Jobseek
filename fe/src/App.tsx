@@ -17,6 +17,8 @@ import EmployerSignIn from './pages/EmployerSignIn';
 import JobSeekerSignIn from './pages/JobSeekerSignIn';
 import DebugProfile from './pages/DebugProfile';
 import JobDetailsPage from './pages/JobDetailsPage';
+import JobApplicationPage from './pages/JobApplicationPage';
+import JobListingPage from './pages/JobListingPage';
 
 const clerkPubKey = process.env.REACT_APP_CLERK_PUBLISHABLE_KEY;
 
@@ -81,8 +83,12 @@ function App() {
             <Route path="/employer/sign-in" element={<EmployerSignIn />} />
             <Route path="/employer" element={<EmployerDashboard />} />
             
-            {/* Job Details Route */}
+            {/* Job Routes */}
+            <Route path="/jobs" element={<JobListingPage />} />
             <Route path="/jobs/:jobId" element={<JobDetailsPage />} />
+
+            {/* Job Application Route */}
+            <Route path="/apply/:jobId" element={<JobApplicationPage />} />
             
             {/* Generic auth routes */}
             <Route path="/sign-in" element={

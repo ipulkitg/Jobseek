@@ -12,6 +12,7 @@ interface JobPosting {
   locationCity: string;
   salaryMin: number | null;
   salaryMax: number | null;
+  applicationSteps: string[];
   isActive: boolean;
   createdAt: string;
   category: {
@@ -36,6 +37,7 @@ interface EditingJob {
   salaryMin: number | null;
   salaryMax: number | null;
   categoryId: string;
+  applicationSteps: string[];
 }
 
 const JobPostingsManagement: React.FC = () => {
@@ -98,7 +100,8 @@ const JobPostingsManagement: React.FC = () => {
       locationCity: job.locationCity || '',
       salaryMin: job.salaryMin,
       salaryMax: job.salaryMax,
-      categoryId: job.category?.id || ''
+      categoryId: job.category?.id || '',
+      applicationSteps: job.applicationSteps || ['personal_info', 'review_submit']
     });
     setShowJobForm(true);
   };

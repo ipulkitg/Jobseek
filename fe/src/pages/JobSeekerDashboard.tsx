@@ -10,7 +10,7 @@ const JobSeekerDashboard: React.FC = () => {
   const { user, isSignedIn, isLoaded } = useUser();
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const { } = useAuth(); // Keep useAuth import but don't use unused vars
-  const { profile, loading: profileLoading, hasProfile } = useProfile();
+  const { profile, loading: profileLoading, hasCompleteProfile } = useProfile();
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState<'dashboard' | 'jobs' | 'applications'>('dashboard');
 
@@ -54,7 +54,7 @@ const JobSeekerDashboard: React.FC = () => {
       default:
         return (
           <div className="welcome-section">
-            {!profileLoading && !hasProfile && (
+            {!profileLoading && !hasCompleteProfile && (
               <div style={{
                 backgroundColor: '#fef3c7',
                 border: '1px solid #f59e0b',
@@ -92,7 +92,7 @@ const JobSeekerDashboard: React.FC = () => {
                 <h2 style={{ margin: 0 }}>Welcome back, {user?.firstName || profile?.name || 'Job Seeker'}!</h2>
                 <p style={{ margin: 0, color: '#6b7280' }}>Find your next opportunity</p>
               </div>
-              {hasProfile && (
+              {hasCompleteProfile && (
                 <div style={{ display: 'flex', gap: '8px' }}>
                   <button
                     onClick={() => navigate('/profile')}

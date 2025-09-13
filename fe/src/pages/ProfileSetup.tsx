@@ -6,7 +6,7 @@ import { api } from '../services/api';
 
 const ProfileSetup: React.FC = () => {
   const { user } = useUser();
-  const { createProfile, updateProfile, refreshProfile, profile } = useProfile();
+  const { createProfile, updateProfile, refreshProfile, profile, hasCompleteProfile } = useProfile();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const roleFromUrl = searchParams.get('role') as 'job_seeker' | 'employer' | null;
@@ -17,8 +17,9 @@ const ProfileSetup: React.FC = () => {
     console.log('📋 ProfileSetup: Role from URL:', roleFromUrl);
     console.log('📋 ProfileSetup: Profile role:', profile?.role);
     console.log('📋 ProfileSetup: Selected role:', selectedRole);
-  }, [roleFromUrl, profile?.role, selectedRole]);
-  const isEditing = !!profile;
+    console.log('📋 ProfileSetup: Has complete profile:', hasCompleteProfile);
+  }, [roleFromUrl, profile?.role, selectedRole, hasCompleteProfile]);
+  const isEditing = hasCompleteProfile;
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [states, setStates] = useState<any[]>([]);

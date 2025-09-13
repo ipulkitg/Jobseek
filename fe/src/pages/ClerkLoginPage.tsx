@@ -6,37 +6,37 @@ import { useProfile } from '../hooks/useProfile';
 
 const ClerkLoginPage: React.FC = () => {
   const { isSignedIn, isLoaded } = useUser();
-  const { profile, loading: profileLoading } = useProfile();
+  const { profile, loading: profileLoading, hasCompleteProfile } = useProfile();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  
+
   // Get intended role from URL parameters
   const intendedRole = searchParams.get('intended') as 'employer' | 'job_seeker' | null;
-  
+
   // Initialize backend session
   useAuth();
 
   // Auto-redirect logic for signed in users
   useEffect(() => {
     if (isLoaded && isSignedIn && !profileLoading) {
-      if (profile) {
-        // User has a profile, redirect to appropriate dashboard
+      if (hasCompleteProfile && profile) {
+        // User has a complete profile, redirect to appropriate dashboard
         if (profile.role === 'job_seeker') {
           navigate('/job-seeker');
         } else if (profile.role === 'employer') {
           navigate('/employer');
         }
       } else {
-        // User is signed in but no profile, redirect to profile setup
-        // Use intended role if provided, otherwise default to job_seeker
-        const roleForSetup = intendedRole || 'job_seeker';
+        // User has incomplete or no profile, redirect to profile setup
+        // Use intended role if provided, otherwise use existing profile role, or default to job_seeker
+        const roleForSetup = intendedRole || profile?.role || 'job_seeker';
         navigate(`/profile-setup?role=${roleForSetup}`);
       }
     } else if (isLoaded && !isSignedIn) {
       // User not signed in, redirect to homepage
       navigate('/');
     }
-  }, [isLoaded, isSignedIn, profileLoading, profile, navigate, intendedRole]);
+  }, [isLoaded, isSignedIn, profileLoading, hasCompleteProfile, profile, navigate, intendedRole]);
 
   // Show loading while redirecting
   return (

@@ -175,6 +175,10 @@ async def update_user_profile(
 ):
     """Update current user's profile"""
     try:
+        # Validate current user exists
+        if not current_user or not current_user.get("id"):
+            raise HTTPException(status_code=401, detail="Invalid session")
+
         # Convert Pydantic model to dict with proper field names using aliases
         profile_dict = profile_data.model_dump(by_alias=True, exclude_unset=True)
         update_data = {k: v for k, v in profile_dict.items() if v is not None}
@@ -185,6 +189,9 @@ async def update_user_profile(
             include={"locationStateRef": True}
         )
 
+        if not user_profile:
+            raise HTTPException(status_code=404, detail="User profile not found")
+
         # Convert to dict and add state name
         profile_dict = user_profile.model_dump(by_alias=True)
         if user_profile.locationStateRef:
@@ -194,6 +201,8 @@ async def update_user_profile(
         await session_auth.create_session(current_user["id"], user_profile)
 
         return UserProfile(**profile_dict)
+    except HTTPException:
+        raise
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
 

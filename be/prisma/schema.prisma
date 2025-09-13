@@ -73,19 +73,20 @@ model USState {
 }
 
 model JobPosting {
-  id          String   @id @default(uuid())
-  employerId  String   @map("employer_id")
-  title       String
-  description String
-  requirements String
-  locationState String? @map("location_state")
-  locationCity  String? @map("location_city")
-  salaryMin   Int?     @map("salary_min")
-  salaryMax   Int?     @map("salary_max")
-  categoryId  String?  @map("category_id")
-  isActive    Boolean  @default(true) @map("is_active")
-  createdAt   DateTime @default(now()) @map("created_at")
-  updatedAt   DateTime @updatedAt @map("updated_at")
+  id               String   @id @default(uuid())
+  employerId       String   @map("employer_id")
+  title            String
+  description      String
+  requirements     String
+  locationState    String?  @map("location_state")
+  locationCity     String?  @map("location_city")
+  salaryMin        Int?     @map("salary_min")
+  salaryMax        Int?     @map("salary_max")
+  categoryId       String?  @map("category_id")
+  applicationSteps String[] @default(["personal_info", "review_submit"]) @map("application_steps")
+  isActive         Boolean  @default(true) @map("is_active")
+  createdAt        DateTime @default(now()) @map("created_at")
+  updatedAt        DateTime @updatedAt @map("updated_at")
 
   // Relations
   employer    UserProfile @relation("EmployerJobs", fields: [employerId], references: [id], onDelete: Cascade)
@@ -97,13 +98,14 @@ model JobPosting {
 }
 
 model JobApplication {
-  id            String            @id @default(uuid())
-  jobPostingId  String            @map("job_posting_id")
-  jobSeekerId   String            @map("job_seeker_id")
-  status        ApplicationStatus @default(applied)
-  coverLetter   String?           @map("cover_letter")
-  appliedAt     DateTime          @default(now()) @map("applied_at")
-  updatedAt     DateTime          @updatedAt @map("updated_at")
+  id             String            @id @default(uuid())
+  jobPostingId   String            @map("job_posting_id")
+  jobSeekerId    String            @map("job_seeker_id")
+  status         ApplicationStatus @default(applied)
+  coverLetter    String?           @map("cover_letter")
+  applicationData Json?            @map("application_data")
+  appliedAt      DateTime          @default(now()) @map("applied_at")
+  updatedAt      DateTime          @updatedAt @map("updated_at")
 
   // Relations
   jobPosting    JobPosting @relation("JobApplications", fields: [jobPostingId], references: [id], onDelete: Cascade)

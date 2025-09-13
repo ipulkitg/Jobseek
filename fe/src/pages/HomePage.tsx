@@ -54,10 +54,37 @@ const HomePage: React.FC = () => {
           <p style={{
             fontSize: '18px',
             color: '#6b7280',
-            margin: '0 0 40px 0'
+            margin: '0 0 20px 0'
           }}>
             Choose your path to get started
           </p>
+          <div style={{
+            textAlign: 'center',
+            marginBottom: '20px'
+          }}>
+            <Link
+              to="/jobs"
+              style={{
+                display: 'inline-block',
+                padding: '12px 24px',
+                backgroundColor: '#6366f1',
+                color: 'white',
+                textDecoration: 'none',
+                borderRadius: '8px',
+                fontSize: '16px',
+                fontWeight: '500',
+                transition: 'background-color 0.2s ease'
+              }}
+              onMouseOver={(e) => {
+                e.currentTarget.style.backgroundColor = '#4f46e5';
+              }}
+              onMouseOut={(e) => {
+                e.currentTarget.style.backgroundColor = '#6366f1';
+              }}
+            >
+              Browse All Jobs
+            </Link>
+          </div>
           
           <div style={{
             display: 'flex',

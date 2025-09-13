@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { api } from '../services/api';
 import { useAuth } from '../hooks/useAuth';
-import JobApplicationModal from '../components/JobApplicationModal';
 
 interface JobPosting {
   id: string;
@@ -35,7 +34,6 @@ const JobDetailsPage: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isApplied, setIsApplied] = useState(false);
-  const [showApplicationModal, setShowApplicationModal] = useState(false);
 
   useEffect(() => {
     const loadJobDetails = async () => {
@@ -74,7 +72,7 @@ const JobDetailsPage: React.FC = () => {
 
   const handleApplyClick = () => {
     if (isApplied || !job) return;
-    setShowApplicationModal(true);
+    navigate(`/apply/${job.id}`);
   };
 
   const handleApplicationSuccess = () => {
@@ -347,16 +345,6 @@ const JobDetailsPage: React.FC = () => {
             {job.employer.companyDescription}
           </div>
         </div>
-      )}
-
-      {/* Application Modal */}
-      {job && (
-        <JobApplicationModal
-          job={job}
-          isOpen={showApplicationModal}
-          onClose={() => setShowApplicationModal(false)}
-          onSuccess={handleApplicationSuccess}
-        />
       )}
     </div>
   );

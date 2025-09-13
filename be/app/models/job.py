@@ -21,6 +21,7 @@ class JobPostingBase(BaseModel):
     salary_min: Optional[int] = Field(None, alias="salaryMin")
     salary_max: Optional[int] = Field(None, alias="salaryMax")
     category_id: Optional[str] = Field(None, alias="categoryId")
+    application_steps: List[str] = Field(default=["personal_info", "review_submit"], alias="applicationSteps")
 
     class Config:
         populate_by_name = True
@@ -37,6 +38,7 @@ class JobPostingUpdate(BaseModel):
     salary_min: Optional[int] = Field(None, alias="salaryMin")
     salary_max: Optional[int] = Field(None, alias="salaryMax")
     category_id: Optional[str] = Field(None, alias="categoryId")
+    application_steps: Optional[List[str]] = Field(None, alias="applicationSteps")
     is_active: Optional[bool] = Field(None, alias="isActive")
 
     class Config:
@@ -45,6 +47,7 @@ class JobPostingUpdate(BaseModel):
 class JobPosting(JobPostingBase):
     id: str
     employerId: str
+    applicationSteps: List[str]
     isActive: bool
     createdAt: datetime
     updatedAt: datetime
@@ -59,9 +62,11 @@ class JobPosting(JobPostingBase):
 class JobApplicationBase(BaseModel):
     job_posting_id: str
     cover_letter: Optional[str] = None
+    application_data: Optional[dict] = Field(None, alias="applicationData")
 
 class JobApplicationCreate(BaseModel):
     cover_letter: Optional[str] = None
+    application_data: Optional[dict] = Field(None, alias="applicationData")
 
 class JobApplicationUpdate(BaseModel):
     status: Optional[ApplicationStatus] = None
@@ -70,9 +75,10 @@ class JobApplicationUpdate(BaseModel):
 class JobApplication(BaseModel):
     id: str
     jobPostingId: str
-    jobSeekerId: str  
+    jobSeekerId: str
     status: ApplicationStatus
     coverLetter: Optional[str] = None
+    applicationData: Optional[dict] = None
     appliedAt: datetime
     updatedAt: datetime
     jobPosting: Optional[Any] = None

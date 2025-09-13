@@ -26,6 +26,7 @@ interface JobPostingFormProps {
     salaryMin: number | null;
     salaryMax: number | null;
     categoryId: string;
+    applicationSteps: string[];
   } | null;
 }
 
@@ -43,7 +44,8 @@ const JobPostingForm: React.FC<JobPostingFormProps> = ({
     locationCity: '',
     salaryMin: '',
     salaryMax: '',
-    categoryId: ''
+    categoryId: '',
+    applicationSteps: ['personal_info', 'review_submit']
   });
   
   const [categories, setCategories] = useState<JobCategory[]>([]);
@@ -69,7 +71,8 @@ const JobPostingForm: React.FC<JobPostingFormProps> = ({
         locationCity: editingJob.locationCity,
         salaryMin: editingJob.salaryMin?.toString() || '',
         salaryMax: editingJob.salaryMax?.toString() || '',
-        categoryId: editingJob.categoryId
+        categoryId: editingJob.categoryId,
+        applicationSteps: editingJob.applicationSteps || ['personal_info', 'review_submit']
       });
     } else {
       setFormData({
@@ -80,7 +83,8 @@ const JobPostingForm: React.FC<JobPostingFormProps> = ({
         locationCity: '',
         salaryMin: '',
         salaryMax: '',
-        categoryId: ''
+        categoryId: '',
+        applicationSteps: ['personal_info', 'review_submit']
       });
     }
   }, [editingJob]);
@@ -101,11 +105,36 @@ const JobPostingForm: React.FC<JobPostingFormProps> = ({
   };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
-    const { name, value } = e.target;
+    const { name, value, type, checked } = e.target as HTMLInputElement;
     setFormData(prev => ({
       ...prev,
-      [name]: value
+      [name]: type === 'checkbox' ? checked : value
     }));
+  };
+
+  const handleApplicationStepChange = (step: string, checked: boolean) => {
+    setFormData(prev => {
+      let newSteps = [...prev.applicationSteps];
+
+      if (checked && !newSteps.includes(step)) {
+        newSteps.push(step);
+      } else if (!checked && newSteps.includes(step)) {
+        newSteps = newSteps.filter(s => s !== step);
+      }
+
+      // Always ensure personal_info and review_submit are included
+      if (!newSteps.includes('personal_info')) {
+        newSteps.push('personal_info');
+      }
+      if (!newSteps.includes('review_submit')) {
+        newSteps.push('review_submit');
+      }
+
+      return {
+        ...prev,
+        applicationSteps: newSteps
+      };
+    });
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -122,7 +151,8 @@ const JobPostingForm: React.FC<JobPostingFormProps> = ({
         location_city: formData.locationCity,
         salary_min: formData.salaryMin ? parseInt(formData.salaryMin) : null,
         salary_max: formData.salaryMax ? parseInt(formData.salaryMax) : null,
-        category_id: formData.categoryId
+        category_id: formData.categoryId,
+        application_steps: formData.applicationSteps
       };
 
       if (editingJob) {
@@ -522,6 +552,96 @@ const JobPostingForm: React.FC<JobPostingFormProps> = ({
                 e.target.style.borderColor = '#e5e7eb';
               }}
             />
+          </div>
+
+          {/* Application Requirements */}
+          <div style={{ marginBottom: '24px' }}>
+            <label style={{
+              display: 'block',
+              marginBottom: '12px',
+              fontSize: '16px',
+              fontWeight: '500',
+              color: '#374151'
+            }}>
+              Application Requirements
+            </label>
+            <p style={{
+              fontSize: '14px',
+              color: '#6b7280',
+              marginBottom: '16px'
+            }}>
+              Select the information you want to collect from candidates during the application process.
+            </p>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+              {/* Personal Information - Always required */}
+              <label style={{
+                display: 'flex',
+                alignItems: 'center',
+                cursor: 'not-allowed',
+                opacity: 0.7
+              }}>
+                <input
+                  type="checkbox"
+                  checked={true}
+                  disabled={true}
+                  style={{ marginRight: '12px' }}
+                />
+                <div>
+                  <div style={{ fontSize: '16px', fontWeight: '500', color: '#374151' }}>
+                    Personal Information
+                  </div>
+                  <div style={{ fontSize: '14px', color: '#6b7280' }}>
+                    Name, email, phone, and basic contact details
+                  </div>
+                </div>
+              </label>
+
+              {/* Technical Assessment */}
+              <label style={{
+                display: 'flex',
+                alignItems: 'center',
+                cursor: 'pointer'
+              }}>
+                <input
+                  type="checkbox"
+                  checked={formData.applicationSteps.includes('technical_assessment')}
+                  onChange={(e) => handleApplicationStepChange('technical_assessment', e.target.checked)}
+                  style={{ marginRight: '12px' }}
+                />
+                <div>
+                  <div style={{ fontSize: '16px', fontWeight: '500', color: '#374151' }}>
+                    Technical Assessment
+                  </div>
+                  <div style={{ fontSize: '14px', color: '#6b7280' }}>
+                    Coding challenges, technical questions, or project descriptions
+                  </div>
+                </div>
+              </label>
+
+              {/* Review & Submit - Always required */}
+              <label style={{
+                display: 'flex',
+                alignItems: 'center',
+                cursor: 'not-allowed',
+                opacity: 0.7
+              }}>
+                <input
+                  type="checkbox"
+                  checked={true}
+                  disabled={true}
+                  style={{ marginRight: '12px' }}
+                />
+                <div>
+                  <div style={{ fontSize: '16px', fontWeight: '500', color: '#374151' }}>
+                    Review & Submit
+                  </div>
+                  <div style={{ fontSize: '14px', color: '#6b7280' }}>
+                    Final review of application before submission
+                  </div>
+                </div>
+              </label>
+            </div>
           </div>
 
           {/* Error Message */}

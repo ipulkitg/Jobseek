@@ -167,14 +167,19 @@ async def get_employer_job_postings(current_user = Depends(get_current_user)):
         job_postings.sort(key=lambda x: x.createdAt, reverse=True)
         
         # Manually get application counts for each job posting since _count is not supported
+        # Convert to dict to allow adding custom fields
+        job_postings_dict = []
         for job_posting in job_postings:
             application_count = await prisma.jobapplication.count(
                 where={"jobPostingId": job_posting.id}
             )
-            # Add the count as a dictionary to match the frontend expectation
-            job_posting._count = {"jobApplications": application_count}
+            # Convert to dict and add custom fields
+            job_dict = job_posting.__dict__
+            job_dict["applicationCount"] = application_count
+            job_dict["_count"] = {"jobApplications": application_count}
+            job_postings_dict.append(job_dict)
 
-        return job_postings
+        return job_postings_dict
     except HTTPException:
         raise
     except Exception as e:

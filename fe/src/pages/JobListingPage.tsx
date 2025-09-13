@@ -59,24 +59,28 @@ const JobListingPage: React.FC = () => {
 
   // Define callback functions first
   const loadJobs = useCallback(async () => {
+    console.log('🔄 loadJobs: Starting...');
     try {
       const params = new URLSearchParams();
-      
+
       if (searchTerm) params.append('search', searchTerm);
       if (selectedCategory) params.append('category_id', selectedCategory);
       if (selectedState) params.append('state_id', selectedState);
       if (selectedCity) params.append('city', selectedCity);
       if (salaryMin) params.append('salary_min', salaryMin);
       if (salaryMax) params.append('salary_max', salaryMax);
-      
+
       params.append('limit', '20');
       params.append('offset', '0');
 
+      console.log('🔄 loadJobs: Making API call with params:', params.toString());
       const response = await api.get(`/jobs?${params.toString()}`);
+      console.log('🔄 loadJobs: API response received, jobs count:', response?.length || 0);
       setJobs(response);
+      console.log('🔄 loadJobs: Jobs set successfully');
     } catch (err) {
+      console.error('❌ loadJobs: Error loading jobs:', err);
       setError('Failed to load jobs');
-      console.error('Error loading jobs:', err);
     }
   }, [searchTerm, selectedCategory, selectedState, selectedCity, salaryMin, salaryMax]);
 
@@ -103,27 +107,41 @@ const JobListingPage: React.FC = () => {
   }, [isSignedIn, isLoaded]);
 
   const loadInitialData = useCallback(async () => {
+    console.log('🔄 loadInitialData: Starting...');
     try {
+      console.log('🔄 loadInitialData: Loading categories and states...');
       const [categoriesRes, statesRes] = await Promise.all([
         api.get('/jobs/categories'),
         api.get('/jobs/states')
       ]);
-      
+
+      console.log('🔄 loadInitialData: Setting categories and states...');
       setCategories(categoriesRes.data);
       setStates(statesRes.data);
-      await Promise.all([
-        loadJobs(),
-        loadAppliedJobs()
-      ]);
+
+      console.log('🔄 loadInitialData: Loading jobs...');
+      await loadJobs();
+
+      // Only load applied jobs for signed-in users
+      if (isSignedIn) {
+        console.log('🔄 loadInitialData: User is signed in, loading applied jobs...');
+        await loadAppliedJobs();
+      } else {
+        console.log('🔄 loadInitialData: User not signed in, skipping applied jobs');
+        setAppliedJobs(new Set()); // Clear applied jobs for unsigned users
+      }
+
+      console.log('🔄 loadInitialData: All data loaded successfully');
     } catch (err) {
+      console.error('❌ loadInitialData: Error loading initial data:', err);
       setError('Failed to load initial data');
-      console.error('Error loading initial data:', err);
     } finally {
+      console.log('🔄 loadInitialData: Setting loading to false');
       setLoading(false);
     }
-  }, [loadJobs, loadAppliedJobs]);
+  }, [loadJobs, loadAppliedJobs, isSignedIn]);
 
-  // Load applied jobs from localStorage immediately
+  // Load applied jobs from localStorage immediately (only for signed-in users)
   useEffect(() => {
     if (isLoaded && isSignedIn) {
       // Load from localStorage first for immediate UI update
@@ -135,22 +153,29 @@ const JobListingPage: React.FC = () => {
       if (appliedSet.size === 0) {
         loadAppliedJobs();
       }
+    } else if (isLoaded && !isSignedIn) {
+      // Clear applied jobs for unsigned users
+      setAppliedJobs(new Set());
     }
   }, [isLoaded, isSignedIn]);
 
   // Load initial data
   useEffect(() => {
-    if (isLoaded && isSignedIn) {
+    console.log('🔄 useEffect for loadInitialData triggered:', { isLoaded, isSignedIn });
+    if (isLoaded) {
+      console.log('🔄 useEffect: Calling loadInitialData...');
       loadInitialData();
+    } else {
+      console.log('🔄 useEffect: Not calling loadInitialData yet (isLoaded:', isLoaded, ', isSignedIn:', isSignedIn, ')');
     }
-  }, [isLoaded, isSignedIn, loadInitialData]);
+  }, [isLoaded, loadInitialData]);
 
   // Load jobs when filters change
   useEffect(() => {
-    if (isLoaded && isSignedIn) {
+    if (isLoaded) {
       loadJobs();
     }
-  }, [isLoaded, isSignedIn, loadJobs]);
+  }, [isLoaded, loadJobs, searchTerm, selectedCategory, selectedState, selectedCity, salaryMin, salaryMax]);
 
   // Refresh applied jobs when navigating back from successful application
   useEffect(() => {
@@ -585,24 +610,56 @@ const JobListingPage: React.FC = () => {
                 <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
                   {(() => {
                     const hasApplied = appliedJobs.has(job.id);
-                    return (
-                      <button
-                        onClick={hasApplied ? undefined : (e) => handleApplyClick(e, job)}
-                        disabled={hasApplied}
-                        style={{
-                          padding: '10px 20px',
-                          backgroundColor: hasApplied ? '#f3f4f6' : '#3b82f6',
-                          color: hasApplied ? '#9ca3af' : 'white',
-                          border: hasApplied ? '1px solid #d1d5db' : 'none',
-                          borderRadius: '8px',
-                          fontSize: '14px',
-                          fontWeight: '600',
-                          cursor: hasApplied ? 'default' : 'pointer'
-                        }}
-                      >
-                        {hasApplied ? 'Applied' : 'Apply Now'}
-                      </button>
-                    );
+                    const isUnsignedUser = !isSignedIn;
+                    const buttonText = isUnsignedUser ? 'Login to Apply' : (hasApplied ? 'Applied' : 'Apply Now');
+
+                    console.log(`🔍 Job ${job.id}: isUnsignedUser=${isUnsignedUser}, hasApplied=${hasApplied}, buttonText="${buttonText}"`);
+
+                    if (isUnsignedUser) {
+                      // Unsigned user - redirect to login
+                      return (
+                        <button
+                          onClick={(e) => {
+                            e.preventDefault();
+                            navigate('/job-seeker/sign-in');
+                          }}
+                          style={{
+                            padding: '10px 20px',
+                            backgroundColor: '#f59e0b',
+                            color: 'white',
+                            border: 'none',
+                            borderRadius: '8px',
+                            fontSize: '14px',
+                            fontWeight: '600',
+                            cursor: 'pointer'
+                          }}
+                          title={`Button for job ${job.id}: ${buttonText}`}
+                        >
+                          {buttonText}
+                        </button>
+                      );
+                    } else {
+                      // Signed in user - normal apply/applied logic
+                      return (
+                        <button
+                          onClick={hasApplied ? undefined : (e) => handleApplyClick(e, job)}
+                          disabled={hasApplied}
+                          style={{
+                            padding: '10px 20px',
+                            backgroundColor: hasApplied ? '#f3f4f6' : '#3b82f6',
+                            color: hasApplied ? '#9ca3af' : 'white',
+                            border: hasApplied ? '1px solid #d1d5db' : 'none',
+                            borderRadius: '8px',
+                            fontSize: '14px',
+                            fontWeight: '600',
+                            cursor: hasApplied ? 'default' : 'pointer'
+                          }}
+                          title={`Button for job ${job.id}: ${buttonText}`}
+                        >
+                          {buttonText}
+                        </button>
+                      );
+                    }
                   })()}
                   <button
                     onClick={(e) => handleViewDetailsClick(e, job.id)}

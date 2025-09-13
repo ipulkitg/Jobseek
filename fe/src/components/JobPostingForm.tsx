@@ -122,14 +122,6 @@ const JobPostingForm: React.FC<JobPostingFormProps> = ({
         newSteps = newSteps.filter(s => s !== step);
       }
 
-      // Always ensure personal_info and review_submit are included
-      if (!newSteps.includes('personal_info')) {
-        newSteps.push('personal_info');
-      }
-      if (!newSteps.includes('review_submit')) {
-        newSteps.push('review_submit');
-      }
-
       return {
         ...prev,
         applicationSteps: newSteps
@@ -574,17 +566,16 @@ const JobPostingForm: React.FC<JobPostingFormProps> = ({
             </p>
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-              {/* Personal Information - Always required */}
+              {/* Personal Information */}
               <label style={{
                 display: 'flex',
                 alignItems: 'center',
-                cursor: 'not-allowed',
-                opacity: 0.7
+                cursor: 'pointer'
               }}>
                 <input
                   type="checkbox"
-                  checked={true}
-                  disabled={true}
+                  checked={formData.applicationSteps.includes('personal_info')}
+                  onChange={(e) => handleApplicationStepChange('personal_info', e.target.checked)}
                   style={{ marginRight: '12px' }}
                 />
                 <div>
@@ -619,17 +610,16 @@ const JobPostingForm: React.FC<JobPostingFormProps> = ({
                 </div>
               </label>
 
-              {/* Review & Submit - Always required */}
+              {/* Review & Submit */}
               <label style={{
                 display: 'flex',
                 alignItems: 'center',
-                cursor: 'not-allowed',
-                opacity: 0.7
+                cursor: 'pointer'
               }}>
                 <input
                   type="checkbox"
-                  checked={true}
-                  disabled={true}
+                  checked={formData.applicationSteps.includes('review_submit')}
+                  onChange={(e) => handleApplicationStepChange('review_submit', e.target.checked)}
                   style={{ marginRight: '12px' }}
                 />
                 <div>

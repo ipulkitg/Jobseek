@@ -55,6 +55,7 @@ class JobPosting(JobPostingBase):
     category: Optional['JobCategory'] = None
     locationStateRef: Optional['USState'] = None
     _count: Optional[dict] = None
+    applicationCount: Optional[int] = None
 
     class Config:
         from_attributes = True

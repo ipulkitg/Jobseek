@@ -81,11 +81,13 @@ const ApplicationsManagement: React.FC = () => {
 
   const getStatusColor = (status: string) => {
     switch (status.toLowerCase()) {
-      case 'pending':
+      case 'applied':
         return '#f59e0b';
       case 'reviewed':
         return '#3b82f6';
-      case 'accepted':
+      case 'interview':
+        return '#8b5cf6';
+      case 'hired':
         return '#10b981';
       case 'rejected':
         return '#ef4444';
@@ -96,11 +98,13 @@ const ApplicationsManagement: React.FC = () => {
 
   const getStatusIcon = (status: string) => {
     switch (status.toLowerCase()) {
-      case 'pending':
+      case 'applied':
         return '⏳';
       case 'reviewed':
         return '👀';
-      case 'accepted':
+      case 'interview':
+        return '📅';
+      case 'hired':
         return '✅';
       case 'rejected':
         return '❌';
@@ -251,9 +255,10 @@ const ApplicationsManagement: React.FC = () => {
               }}
             >
               <option value="">All Statuses</option>
-              <option value="pending">Pending</option>
+              <option value="applied">Applied</option>
               <option value="reviewed">Reviewed</option>
-              <option value="accepted">Accepted</option>
+              <option value="interview">Interview</option>
+              <option value="hired">Hired</option>
               <option value="rejected">Rejected</option>
             </select>
           </div>
@@ -435,9 +440,26 @@ const ApplicationsManagement: React.FC = () => {
                         Mark as Reviewed
                       </button>
                     )}
-                    {application.status.toLowerCase() !== 'accepted' && (
+                    {application.status.toLowerCase() !== 'interview' && application.status.toLowerCase() !== 'hired' && (
                       <button
-                        onClick={() => updateApplicationStatus(application.id, 'accepted')}
+                        onClick={() => updateApplicationStatus(application.id, 'interview')}
+                        style={{
+                          padding: '6px 12px',
+                          backgroundColor: '#8b5cf6',
+                          color: 'white',
+                          border: 'none',
+                          borderRadius: '6px',
+                          fontSize: '12px',
+                          fontWeight: '500',
+                          cursor: 'pointer'
+                        }}
+                      >
+                        Schedule Interview
+                      </button>
+                    )}
+                    {application.status.toLowerCase() !== 'hired' && (
+                      <button
+                        onClick={() => updateApplicationStatus(application.id, 'hired')}
                         style={{
                           padding: '6px 12px',
                           backgroundColor: '#10b981',
@@ -449,7 +471,7 @@ const ApplicationsManagement: React.FC = () => {
                           cursor: 'pointer'
                         }}
                       >
-                        Accept
+                        Hire
                       </button>
                     )}
                     {application.status.toLowerCase() !== 'rejected' && (
@@ -560,8 +582,8 @@ const ApplicationsManagement: React.FC = () => {
             gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))',
             gap: '16px'
           }}>
-            {['pending', 'reviewed', 'accepted', 'rejected'].map(status => {
-              const count = applications.filter(app => 
+            {['applied', 'reviewed', 'interview', 'hired', 'rejected'].map(status => {
+              const count = applications.filter(app =>
                 app.status.toLowerCase() === status
               ).length;
               return (

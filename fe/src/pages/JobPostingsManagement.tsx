@@ -22,9 +22,10 @@ interface JobPosting {
   locationStateRef: {
     name: string;
   };
-  _count: {
+  _count?: {
     jobApplications: number;
   };
+  applicationCount?: number;
 }
 
 interface EditingJob {
@@ -424,7 +425,7 @@ const JobPostingsManagement: React.FC = () => {
               color: '#a16207',
               margin: '0'
             }}>
-              {jobPostings.reduce((total, job) => total + (job._count?.jobApplications || 0), 0)}
+              {jobPostings.reduce((total, job) => total + (job?.applicationCount || job._count?.jobApplications || 0), 0)}
             </p>
           </div>
 
@@ -583,7 +584,7 @@ const JobPostingsManagement: React.FC = () => {
                       💰 {formatSalary(job?.salaryMin, job?.salaryMax)}
                     </span>
                     <span style={{ color: '#6b7280', fontSize: '14px' }}>
-                      📝 {job?._count?.jobApplications || 0} application{(job?._count?.jobApplications || 0) !== 1 ? 's' : ''}
+                      📝 {job?.applicationCount || job?._count?.jobApplications || 0} application{(job?.applicationCount || job?._count?.jobApplications || 0) !== 1 ? 's' : ''}
                     </span>
                   </div>
                 </div>
